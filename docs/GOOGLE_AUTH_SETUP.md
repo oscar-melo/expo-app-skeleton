@@ -1,6 +1,6 @@
 # Prueba de autenticación con Google
 
-Guía para probar el login con Google en local. **No hace falta subir este archivo** si no quieres (puedes añadirlo a `.gitignore` o no hacer commit).
+Guía para probar el login con Google en local.
 
 ---
 
