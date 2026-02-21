@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Skeleton App",
+    "slug": "skeleton-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "skeletonapp",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.skeletonapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "package": "com.skeletonapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ]
+  }
+}

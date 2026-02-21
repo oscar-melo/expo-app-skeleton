@@ -1,0 +1,8 @@
+/**
+ * Utilidad compartida: lanza si la condición no se cumple.
+ */
+export function assert(condition: boolean, message: string): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
