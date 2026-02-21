@@ -16,17 +16,21 @@ Guía para probar el login con Google en local.
 
 ## 2. Pantalla de consentimiento de OAuth
 
-1. **APIs y servicios** → **Pantalla de consentimiento de OAuth**.
-2. Si te pregunta tipo de usuario, elige **Externo** (para probar con tu cuenta de Google).
-3. Rellena:
-   - **Nombre de la aplicación**: p. ej. `Skeleton App Dev`.
-   - **Correo de asistencia**: tu email.
-   - **Dominios autorizados**: en desarrollo puedes dejarlo vacío o poner `localhost`.
-4. En **Ámbitos**, añade (o verifica que existan):
-   - `.../auth/userinfo.email`
-   - `.../auth/userinfo.profile`
-   - `openid`
-5. Guarda. Si añades usuarios de prueba (tipo “Externo”), agrega tu cuenta en **Usuarios de prueba**.
+Puedes llegar desde **APIs y servicios** → **Pantalla de consentimiento de OAuth**, o desde **Google Auth Platform** en el menú. Si entras y solo ves “Descripción general” con métricas y gráficos, **esa no es la pantalla de configuración**. Usa el **menú de la izquierda** para ir a donde se rellena todo:
+
+1. **Información de la marca** (en el menú izquierdo)
+   - Ahí rellenas: **Nombre de la aplicación** (p. ej. `Skeleton App Dev`), **Correo de asistencia** (tu email). Dominios autorizados en desarrollo puedes dejarlos vacíos o poner `localhost`.
+   - Guarda los cambios.
+
+2. **Público** (en el menú izquierdo)
+   - Si te pide tipo de usuario, elige **Externo** para probar con tu cuenta de Google.
+   - Si la app es “Externa”, entra en **Usuarios de prueba** y añade tu cuenta de Gmail para poder iniciar sesión en pruebas.
+
+3. **Acceso a los datos** (o la opción donde aparezcan “Ámbitos” / “Scopes”)
+   - Añade o verifica que existan los ámbitos: `userinfo.email`, `userinfo.profile`, `openid` (o los que aparezcan como email, profile, openid).
+   - Guarda.
+
+Cuando hayas completado Información de la marca, Público y ámbitos, la pantalla de consentimiento quedará lista para usar con tu Client ID.
 
 ---
 
