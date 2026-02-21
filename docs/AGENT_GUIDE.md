@@ -1,79 +1,213 @@
-# Guía para agentes de IA
+# Guía para agentes de IA — Cómo extender la app
 
-Este documento explica cómo extender el esqueleto de la aplicación: menú, integraciones, componentes UI, autenticación, estilos y limitaciones web vs móvil.
-
----
-
-## 1. Cómo agregar un nuevo ítem de menú
-
-- **Ubicación**: el contenido del menú lateral se define en `src/ui/components/DrawerContent.tsx`.
-- **Estructura**: la constante `MENU_GROUPS` es un array de grupos; cada grupo tiene `title` y `items`. Cada ítem tiene `label` (texto visible) y `route` (ruta de Expo Router, p. ej. `'/'` o `'/otra-pantalla'`).
-- **Pasos**:
-  1. Añadir una nueva pantalla en `app/(drawer)/` si hace falta (p. ej. `app/(drawer)/otra.tsx`).
-  2. En `DrawerContent.tsx`, añadir el ítem al grupo deseado en `MENU_GROUPS`, por ejemplo:
-     ```ts
-     { label: 'Mi nueva pantalla', route: '/otra' }
-     ```
-  3. En `app/(drawer)/_layout.tsx`, registrar la nueva pantalla en el `Drawer` con `<Drawer.Screen name="otra" options={{ drawerLabel: 'Mi nueva pantalla' }} />`.
-- El **acordeón** ya está implementado: cada grupo es colapsable; el estado `expandedGroup` controla qué grupo está abierto. El **buscador** filtra ítems por `label`.
+> Antes de implementar cualquier cambio, lee este documento completo.
+> Para contexto general del proyecto (estructura de capas, archivos clave, convenciones) lee [`AGENTS.md`](../AGENTS.md) en la raíz.
 
 ---
 
-## 2. Cómo agregar una nueva integración (repositorio, servicio, UI)
+## 1. Cómo agregar una nueva pantalla al menú
 
-Sigue la arquitectura limpia: **puerto → implementación → servicio → composition root → UI**.
+**Archivos involucrados:**
+- `src/ui/components/DrawerContent.tsx` — define el menú
+- `app/(drawer)/_layout.tsx` — registra las pantallas en el drawer
+- `app/(drawer)/nueva-pantalla.tsx` — la pantalla nueva
 
-1. **Definir el puerto** en `src/model/ports/`: crear un archivo p. ej. `mi-repo.repository.port.ts` con una interfaz (ej. `IMiRepository` con los métodos que la capa de aplicación necesita). Los tipos de retorno deben usar DTOs en `src/model/types/`.
+**Pasos:**
 
-2. **Implementar el repositorio** en `src/repositories/`: crear p. ej. `mi.repository.ts` que implemente la interfaz y haga las llamadas a la API externa, BD, etc.
+1. Crear el archivo de la pantalla en `app/(drawer)/`, por ejemplo `app/(drawer)/ajustes.tsx`:
+   ```tsx
+   import { View } from 'react-native';
+   import { AppText } from '@/ui/components';
 
-3. **Crear el servicio** en `src/services/`: p. ej. `mi.service.ts` que reciba el puerto por constructor (`constructor(private readonly miRepo: IMiRepository)`) y exponga métodos que la UI llamará. No importar la implementación concreta, solo el puerto.
+   export default function AjustesScreen() {
+     return (
+       <View>
+         <AppText>Ajustes</AppText>
+       </View>
+     );
+   }
+   ```
 
-4. **Registrar en el composition root**: en `src/context/ServicesContext.tsx`, instanciar el repositorio concreto, crear el servicio inyectándolo y añadirlo al objeto `Services` y al tipo de contexto para que `useServices()` lo exponga.
+2. En `DrawerContent.tsx`, añadir el ítem al grupo deseado en `MENU_GROUPS`:
+   ```ts
+   { label: 'Ajustes', route: '/ajustes' }
+   ```
 
-5. **UI**: en pantallas o componentes, usar `useServices()` y llamar a `miService.miMetodo()`. Si hace falta estado global (lista, detalle), usar Zustand u otro store y actualizarlo desde el servicio.
+3. En `app/(drawer)/_layout.tsx`, registrar la pantalla:
+   ```tsx
+   <Drawer.Screen name="ajustes" options={{ drawerLabel: 'Ajustes' }} />
+   ```
+
+**Nota:** el acordeón y el buscador del menú ya funcionan automáticamente; no necesitan cambios.
+
+---
+
+## 2. Cómo agregar una nueva integración
+
+Sigue este flujo: **puerto → repositorio → servicio → composition root → UI**
+
+### Paso 1 — Definir el puerto (interfaz)
+
+En `src/model/ports/`, crear `mi-repo.repository.port.ts`:
+
+```ts
+import type { MiDTO } from '../types/mi-dto';
+
+export interface IMiRepository {
+  obtenerDatos(): Promise<MiDTO[]>;
+}
+```
+
+Los tipos de retorno van en `src/model/types/`.
+
+### Paso 2 — Implementar el repositorio
+
+En `src/repositories/`, crear `mi.repository.ts`:
+
+```ts
+import type { IMiRepository } from '@/model/ports/mi-repo.repository.port';
+import type { MiDTO } from '@/model/types/mi-dto';
+
+export class MiRepository implements IMiRepository {
+  async obtenerDatos(): Promise<MiDTO[]> {
+    // llamada a API, base de datos, etc.
+    return [];
+  }
+}
+```
+
+### Paso 3 — Crear el servicio
+
+En `src/services/`, crear `mi.service.ts`:
+
+```ts
+import type { IMiRepository } from '@/model/ports/mi-repo.repository.port';
+
+export class MiService {
+  constructor(private readonly miRepo: IMiRepository) {}
+
+  async obtenerDatos() {
+    return this.miRepo.obtenerDatos();
+  }
+}
+```
+
+**Importante:** el servicio solo importa el puerto (interfaz), nunca la implementación concreta.
+
+### Paso 4 — Registrar en el composition root
+
+En `src/context/ServicesContext.tsx`:
+
+```tsx
+import { MiRepository } from '@/repositories/mi.repository';
+import { MiService } from '@/services/mi.service';
+import type { MiService as IMiService } from '@/services/mi.service';
+
+const miRepository = new MiRepository();
+const miService = new MiService(miRepository);
+
+interface Services {
+  authService: IAuthService;
+  miService: IMiService;   // ← añadir
+}
+
+// Dentro de ServicesProvider:
+const value = useMemo<Services>(() => ({
+  authService,
+  miService,               // ← añadir
+}), []);
+```
+
+### Paso 5 — Usar en la UI
+
+```tsx
+import { useServices } from '@/context/ServicesContext';
+
+export default function MiPantalla() {
+  const { miService } = useServices();
+  // miService.obtenerDatos()
+}
+```
 
 ---
 
 ## 3. Framework UI y cómo agregar componentes
 
-- **Stack**: React Native + Expo. Navegación con **Expo Router** (file-based) y **Drawer** de `@react-navigation/drawer`.
-- **Sistema de diseño**: tema centralizado en `src/ui/theme/theme.ts` (colores, espaciado, tipografía, bordes). Los componentes base en `src/ui/components/` consumen este tema.
-- **Componentes base existentes**: `Button`, `AppText`, `SearchInput` en `src/ui/components/`. Se exportan desde `src/ui/components/index.ts`.
-- **Añadir nuevos componentes** (p. ej. date picker, selector):
-  - Crear el componente en `src/ui/components/`, usando `theme` desde `@/ui/theme` y `StyleSheet` para estilos.
-  - Exportarlo en `src/ui/components/index.ts`.
-  - Para date pickers o controles nativos, usar una librería compatible con Expo (ej. `@react-native-community/datetimepicker`) y envolverla en un componente que use el tema (colores, espaciado) para mantener consistencia.
+- **Stack base:** React Native + Expo. Navegación con Expo Router (file-based) + Drawer de `@react-navigation/drawer`.
+- **Tema global:** `src/ui/theme/theme.ts` — colores, espaciado, tipografía, bordes. Cambiar aquí se propaga a toda la app.
+- **Componentes base existentes:** `Button`, `AppText`, `SearchInput` en `src/ui/components/`. Se exportan desde `src/ui/components/index.ts`.
+
+**Para añadir un nuevo componente:**
+
+1. Crear el archivo en `src/ui/components/MiComponente.tsx`:
+   ```tsx
+   import { StyleSheet, View } from 'react-native';
+   import { theme } from '@/ui/theme';
+
+   export function MiComponente() {
+     return <View style={styles.container} />;
+   }
+
+   const styles = StyleSheet.create({
+     container: {
+       backgroundColor: theme.colors.surface,
+       padding: theme.spacing.md,
+       borderRadius: theme.borderRadius.md,
+     },
+   });
+   ```
+
+2. Exportarlo en `src/ui/components/index.ts`.
+
+Para controles nativos (date picker, etc.), usar una librería compatible con Expo y envolverla en un componente que use el tema.
 
 ---
 
-## 4. Cómo funciona la autenticación y conexión con un servicio externo
+## 4. Cómo funciona la autenticación y cómo conectar un backend
 
-- **Flujo actual**: la UI llama a `authService.loginWithGoogle()`. El servicio usa el puerto `IAuthRepository`; la implementación (`AuthRepository`) hace el redirect a Google OAuth, intercambia el código por token y obtiene datos de usuario. El resultado (usuario + token) se guarda en el store de Zustand (`useAuthStore`) y se muestra en pantalla (nombre/correo).
-- **Dónde se lee el usuario**: `useAuthStore()` devuelve `user` y `accessToken`. Las pantallas que necesiten usuario autenticado deben usar este store.
-- **Conectar un servicio externo para autorización**: el esqueleto no implementa backend. Para autorización (roles, permisos, validación de token en servidor):
-  - Definir un puerto en `model/ports/` para el cliente del backend (ej. `IAuthBackendClient`).
-  - Implementar un repositorio que llame a tu API (REST, etc.) para validar token, obtener roles, etc.
-  - Crear un servicio que use ese puerto y que la UI llame para “comprobar permisos” o “sincronizar sesión”. El token actual puede enviarse desde `useAuthStore().accessToken` o inyectarse en el repositorio según diseño.
+**Flujo actual:**
+```
+UI → authService.loginWithGoogle()
+   → AuthRepository (implementa IAuthRepository)
+   → Google OAuth (redirect + código → token + usuario)
+   → guarda en useAuthStore (Zustand)
+```
+
+**Acceder al usuario autenticado:**
+```ts
+import { useAuthStore } from '@/ui/stores/authStore';
+const { user, accessToken } = useAuthStore();
+```
+
+**Para añadir validación en backend propio:**
+1. Definir un puerto en `model/ports/` para el cliente del backend (ej. `IAuthBackendClient`).
+2. Implementar un repositorio que llame a tu API para validar token, obtener roles, etc.
+3. Crear un servicio que use ese puerto; leer el token actual desde `useAuthStore().accessToken` o inyectarlo según diseño.
+
+Para configurar Google OAuth en local, ver [`docs/GOOGLE_AUTH_SETUP.md`](GOOGLE_AUTH_SETUP.md).
 
 ---
 
 ## 5. Cómo cambiar los estilos
 
-- **Tema global**: editar `src/ui/theme/theme.ts`. Ahí se definen `colors`, `spacing`, `fontSize`, `borderRadius`. Cualquier componente que importe `theme` desde `@/ui/theme` reflejará los cambios.
-- **Componentes**: cada componente en `src/ui/components/` usa `StyleSheet.create` con valores del tema. Para cambiar solo un componente, editar su archivo y ajustar estilos o usar la prop `style` cuando esté soportada.
-- **Extender sin tocar el tema**: se puede pasar `style` o `textStyle` a componentes como `Button` o `AppText` para sobreescribir o añadir estilos en un uso concreto.
+- **Tema global:** editar `src/ui/theme/theme.ts`. Ahí están `colors`, `spacing`, `fontSize`, `borderRadius`. Cualquier componente que importe `theme` desde `@/ui/theme` reflejará los cambios.
+- **Componente específico:** editar su archivo en `src/ui/components/` y ajustar el `StyleSheet`.
+- **Override en un uso concreto:** pasar `style` o `textStyle` como prop a `Button` o `AppText` para sobreescribir estilos sin tocar el componente original.
 
 ---
 
 ## 6. Limitaciones y recomendaciones (web vs móvil)
 
-- **Diferencias a tener en cuenta**:
-  - **Web**: el drawer suele abrirse por clic (hamburger); en móvil es típico el gesto de arrastre. Probar ambos.
-  - **Áreas táctiles**: en móvil los botones y enlaces deben tener altura mínima ~44pt para que sean fáciles de tocar.
-  - **Teclado**: en móvil el teclado puede cubrir inputs; considerar `KeyboardAvoidingView` o scroll cuando haya formularios.
-  - **Dimensiones**: usar `useWindowDimensions` o el hook `useResponsive` en `src/ui/hooks/useResponsive.ts` (breakpoints en 600 y 900px) para adaptar layout a pantalla grande (web/tablet) vs móvil.
-- **Recomendaciones**:
-  - Probar nuevas pantallas y componentes tanto en navegador (Expo web) como en dispositivo o emulador (Expo Go) para evitar que algo se vea bien en uno y mal en el otro.
-  - Evitar anchos fijos que rompan en móvil; usar `maxWidth`, `width: '100%'` y padding del tema.
-  - Si una funcionalidad depende de APIs nativas (push, SMS, etc.), documentar que no estará disponible en web o implementar un fallback.
+| Aspecto | Web | Móvil |
+|---|---|---|
+| Drawer | Se abre con hamburger (clic) | Se abre con gesto de arrastre |
+| Áreas táctiles | No crítico | Mínimo ~44pt de altura |
+| Teclado | No afecta | Puede cubrir inputs → usar `KeyboardAvoidingView` |
+| Dimensiones | Ventana redimensionable | Fija por dispositivo |
+
+**Herramienta disponible:** `useResponsive` en `src/ui/hooks/useResponsive.ts` con breakpoints en 600 y 900px para adaptar layout según tamaño de pantalla.
+
+**Reglas generales:**
+- Evitar anchos fijos; usar `maxWidth`, `width: '100%'` y padding del tema.
+- Probar toda nueva pantalla en web (`npm run web`) y en dispositivo/emulador.
+- Si una funcionalidad usa APIs nativas (push, SMS, cámara, etc.), documentar que no estará en web o implementar un fallback.

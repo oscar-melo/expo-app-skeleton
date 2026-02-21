@@ -3,33 +3,28 @@ description: Contexto del proyecto y referencia a la documentación (evita recor
 alwaysApply: true
 ---
 
-# Expo App Skeleton – Contexto para el agente
+# Expo App Skeleton — Contexto para el agente
+
+> Referencia completa en [`AGENTS.md`](../../AGENTS.md) (raíz del proyecto).
+> Este archivo es un resumen rápido para Cursor.
 
 Este proyecto es un **esqueleto de app** con Expo (React Native) para móvil (iOS/Android) y web responsive. Usa **arquitectura limpia** con inversión de dependencias.
 
 ## Estructura de capas
 
-- **`src/model/`** – Puertos (interfaces en `ports/`) y tipos (DTOs en `types/`). No depende de UI ni de implementaciones.
-- **`src/services/`** – Casos de uso; reciben puertos por inyección.
-- **`src/repositories/`** – Implementan los puertos; integraciones externas (Google OAuth, APIs, etc.).
-- **`src/ui/`** – Componentes, tema (`theme/`), hooks, stores (Zustand). La UI solo llama a servicios vía `useServices()`.
-- **`src/context/ServicesContext.tsx`** – Composition root: instancia repos y servicios, los expone con `useServices()`.
-- **`src/config/`** – Env (client IDs), config editable (p. ej. `menuFooter.ts`).
-- **`src/shared/`** – Utilidades compartidas.
-- **`app/`** – Entrada Expo Router: `_layout.tsx` (providers), `(drawer)/` (drawer + pantallas).
+- **`src/model/`** — Puertos (interfaces en `ports/`) y tipos (DTOs en `types/`). No depende de UI ni de implementaciones.
+- **`src/services/`** — Casos de uso; reciben puertos por inyección, nunca implementaciones concretas.
+- **`src/repositories/`** — Implementan los puertos; integraciones externas (Google OAuth, APIs, etc.).
+- **`src/ui/`** — Componentes, tema (`theme/`), hooks, stores (Zustand). La UI solo llama a servicios vía `useServices()`.
+- **`src/context/ServicesContext.tsx`** — Composition root: instancia repos y servicios, los expone con `useServices()`.
+- **`src/config/`** — Env tipadas (`env.ts`), config editable (`menuFooter.ts`).
+- **`src/shared/`** — Utilidades compartidas.
+- **`app/`** — Expo Router: `_layout.tsx` (providers), `(drawer)/` (drawer + pantallas).
 
 ## Documentación de referencia
 
-**Consultar siempre antes de implementar cambios:**
+**Leer siempre antes de implementar cambios:**
 
-1. **`docs/AGENT_GUIDE.md`** – Cómo extender la app:
-   - 1) Nuevo ítem de menú (`DrawerContent.tsx`, `MENU_GROUPS`, `_layout.tsx`).
-   - 2) Nueva integración (puerto → repositorio → servicio → composition root → UI).
-   - 3) Framework UI (Expo/RN), tema en `src/ui/theme`, componentes base.
-   - 4) Autenticación (flujo, `useAuthStore`, conectar backend).
-   - 5) Cambiar estilos (tema, componentes, props `style`).
-   - 6) Limitaciones web vs móvil y recomendaciones.
-
-2. **`docs/GOOGLE_AUTH_SETUP.md`** – Configurar y probar login con Google (Google Cloud, redirect URI, `.env`).
-
-No es necesario recorrer todo el código para seguir estas guías; leer los docs y los archivos que indiquen basta.
+1. **[`docs/AGENT_GUIDE.md`](../../docs/AGENT_GUIDE.md)** — Cómo extender la app: menú, integraciones, componentes, auth, estilos, web vs móvil.
+2. **[`docs/GOOGLE_AUTH_SETUP.md`](../../docs/GOOGLE_AUTH_SETUP.md)** — Configurar y probar login con Google.
+3. **[`AGENTS.md`](../../AGENTS.md)** — Contexto completo del proyecto (convenciones, archivos clave, regla de dependencias).
