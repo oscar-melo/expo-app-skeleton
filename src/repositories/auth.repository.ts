@@ -23,6 +23,11 @@ export class AuthRepository implements IAuthRepository {
       path: 'auth',
     });
 
+    // En desarrollo: revisa la consola para copiar esta URI a "URIs de redirección autorizados" en Google Cloud.
+    if (__DEV__) {
+      console.log('[Auth] Redirect URI para Google Cloud Console:', redirectUri);
+    }
+
     const request = new AuthSession.AuthRequest({
       clientId,
       scopes: ['openid', 'profile', 'email'],
