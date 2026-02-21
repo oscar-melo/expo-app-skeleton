@@ -47,11 +47,65 @@ La app funciona sin configurar Google Auth, pero el botón de login no completar
 
 ## Ejecución
 
+### 🌐 Web (la más rápida para empezar)
+
 ```bash
-npm run web        # Navegador
-npm run android    # Emulador / dispositivo Android
-npm run ios        # Simulador / dispositivo iOS
+npm run web
 ```
+
+Abre automáticamente `http://localhost:8081` en el navegador. No requiere nada extra.
+
+---
+
+### 📱 Móvil con Expo Go (recomendado — sin emulador)
+
+La opción más rápida para ver la app en tu celular real.
+
+1. Instala **Expo Go** en tu teléfono:
+   - [iOS — App Store](https://apps.apple.com/app/expo-go/id982107779)
+   - [Android — Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
+
+2. Arranca el servidor:
+   ```bash
+   npx expo start
+   ```
+
+3. Escanea el QR que aparece en la terminal:
+   - **iOS**: usa la app de **Cámara** del sistema.
+   - **Android**: usa la app de **Expo Go** directamente (botón "Scan QR code").
+
+4. La app se abrirá en tu celular en segundos. Los cambios que hagas en el código se reflejan al instante (hot reload).
+
+> **Nota:** asegúrate de que el celular y el computador estén en la **misma red Wi-Fi**.
+
+---
+
+### 🤖 Android — Emulador (sin celular físico)
+
+Requiere instalar **Android Studio** primero:
+
+1. Descarga e instala [Android Studio](https://developer.android.com/studio).
+2. Abre Android Studio → **Device Manager** (icono de teléfono en la barra lateral derecha) → **Create Virtual Device**.
+3. Elige un modelo (ej. Pixel 8) y una imagen del sistema (ej. API 35) → **Finish**.
+4. Inicia el emulador con el botón ▶.
+5. Con el emulador abierto, corre:
+   ```bash
+   npm run android
+   ```
+
+---
+
+### 🍎 iOS — Simulador (solo en Mac)
+
+Requiere instalar **Xcode** primero:
+
+1. Instala [Xcode](https://apps.apple.com/app/xcode/id497799835) desde la App Store (es grande, ~15 GB).
+2. Abre Xcode → **Settings** → **Platforms** → descarga un simulador de iOS (ej. iPhone 16, iOS 18).
+3. Con Xcode instalado, corre:
+   ```bash
+   npm run ios
+   ```
+   Esto abrirá el simulador automáticamente.
 
 ---
 
