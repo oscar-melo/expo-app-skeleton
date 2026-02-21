@@ -4,7 +4,7 @@ Este documento explica cómo extender el esqueleto de la aplicación: menú, int
 
 ---
 
-## 7.1 Cómo agregar un nuevo ítem de menú
+## 1. Cómo agregar un nuevo ítem de menú
 
 - **Ubicación**: el contenido del menú lateral se define en `src/ui/components/DrawerContent.tsx`.
 - **Estructura**: la constante `MENU_GROUPS` es un array de grupos; cada grupo tiene `title` y `items`. Cada ítem tiene `label` (texto visible) y `route` (ruta de Expo Router, p. ej. `'/'` o `'/otra-pantalla'`).
@@ -19,7 +19,7 @@ Este documento explica cómo extender el esqueleto de la aplicación: menú, int
 
 ---
 
-## 7.2 Cómo agregar una nueva integración (repositorio, servicio, UI)
+## 2. Cómo agregar una nueva integración (repositorio, servicio, UI)
 
 Sigue la arquitectura limpia: **puerto → implementación → servicio → composition root → UI**.
 
@@ -35,7 +35,7 @@ Sigue la arquitectura limpia: **puerto → implementación → servicio → comp
 
 ---
 
-## 7.3 Framework UI y cómo agregar componentes
+## 3. Framework UI y cómo agregar componentes
 
 - **Stack**: React Native + Expo. Navegación con **Expo Router** (file-based) y **Drawer** de `@react-navigation/drawer`.
 - **Sistema de diseño**: tema centralizado en `src/ui/theme/theme.ts` (colores, espaciado, tipografía, bordes). Los componentes base en `src/ui/components/` consumen este tema.
@@ -47,7 +47,7 @@ Sigue la arquitectura limpia: **puerto → implementación → servicio → comp
 
 ---
 
-## 7.4 Cómo funciona la autenticación y conexión con un servicio externo
+## 4. Cómo funciona la autenticación y conexión con un servicio externo
 
 - **Flujo actual**: la UI llama a `authService.loginWithGoogle()`. El servicio usa el puerto `IAuthRepository`; la implementación (`AuthRepository`) hace el redirect a Google OAuth, intercambia el código por token y obtiene datos de usuario. El resultado (usuario + token) se guarda en el store de Zustand (`useAuthStore`) y se muestra en pantalla (nombre/correo).
 - **Dónde se lee el usuario**: `useAuthStore()` devuelve `user` y `accessToken`. Las pantallas que necesiten usuario autenticado deben usar este store.
@@ -58,7 +58,7 @@ Sigue la arquitectura limpia: **puerto → implementación → servicio → comp
 
 ---
 
-## 7.5 Cómo cambiar los estilos
+## 5. Cómo cambiar los estilos
 
 - **Tema global**: editar `src/ui/theme/theme.ts`. Ahí se definen `colors`, `spacing`, `fontSize`, `borderRadius`. Cualquier componente que importe `theme` desde `@/ui/theme` reflejará los cambios.
 - **Componentes**: cada componente en `src/ui/components/` usa `StyleSheet.create` con valores del tema. Para cambiar solo un componente, editar su archivo y ajustar estilos o usar la prop `style` cuando esté soportada.
@@ -66,7 +66,7 @@ Sigue la arquitectura limpia: **puerto → implementación → servicio → comp
 
 ---
 
-## 7.6 Limitaciones y recomendaciones (web vs móvil)
+## 6. Limitaciones y recomendaciones (web vs móvil)
 
 - **Diferencias a tener en cuenta**:
   - **Web**: el drawer suele abrirse por clic (hamburger); en móvil es típico el gesto de arrastre. Probar ambos.
