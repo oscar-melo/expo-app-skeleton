@@ -6,6 +6,9 @@ import type { AuthService as IAuthService } from '@/services/auth.service';
 const authRepository = new AuthRepository();
 const authService = new AuthService(authRepository);
 
+// Pre-carga asíncrona (no bloquea el render)
+authRepository.prefetchDiscovery();
+
 interface Services {
   authService: IAuthService;
 }

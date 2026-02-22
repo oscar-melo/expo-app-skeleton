@@ -13,6 +13,21 @@ WebBrowser.maybeCompleteAuthSession();
  * vía expo-auth-session (redirect). Funciona en web y móvil.
  */
 export class AuthRepository implements IAuthRepository {
+  private discovery: AuthSession.DiscoveryDocument | null = null;
+
+  /**
+   * Pre-carga la configuración de Google (discovery).
+   * Llamar esto al inicio de la app evita el "Popup Blocked" en Web,
+   * ya que elimina un await antes de promptAsync().
+   */
+  async prefetchDiscovery(): Promise<void> {
+    try {
+      this.discovery = await AuthSession.fetchDiscoveryAsync('https://accounts.google.com');
+    } catch (e) {
+      console.error('[Auth] Error pre-fetching discovery:', e);
+    }
+  }
+
   async loginWithGoogle(): Promise<AuthResult | null> {
     const clientId = Platform.select({
       ios: GOOGLE_IOS_CLIENT_ID,
@@ -42,30 +57,25 @@ export class AuthRepository implements IAuthRepository {
       }),
     });
 
-    // En desarrollo: revisa la consola para copiar esta URI a "URIs de redirección autorizados" en Google Cloud.
     if (__DEV__) {
-      console.log('[Auth] Redirect URI para Google Cloud Console:', redirectUri);
+      console.log('[Auth] Redirect URI:', redirectUri);
     }
 
-    // 1️⃣ Get Google's OAuth endpoints
-    const discovery = await AuthSession.fetchDiscoveryAsync(
-      'https://accounts.google.com'
-    );
+    // 1️⃣ Aseguramos discovery (si no se pre-cargó, lo hacemos ahora)
+    const discovery = this.discovery || await AuthSession.fetchDiscoveryAsync('https://accounts.google.com');
 
-    // 2️⃣ Create request
+    // 2️⃣ Creamos el objeto de request (operación síncrona/ligera)
     const isWeb = Platform.OS === 'web';
     const request = new AuthSession.AuthRequest({
       clientId,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      usePKCE: !isWeb, // Los clientes nativos obligan a usar PKCE
+      usePKCE: !isWeb,
       responseType: isWeb ? AuthSession.ResponseType.Token : AuthSession.ResponseType.Code,
     });
 
-    // 3️⃣ Generate URL using discovery
-    await request.makeAuthUrlAsync(discovery);
-
-    // 4️⃣ Start auth flow
+    // 3️⃣ Start auth flow
+    // CRITICAL: promptAsync() debe ejecutarse lo más cerca posible del clic del usuario en Web.
     const result = await request.promptAsync(discovery);
 
     if (result.type !== 'success') {
@@ -76,11 +86,9 @@ export class AuthRepository implements IAuthRepository {
     let id_token = '';
 
     if (isWeb) {
-      // En Web usamos Implicit Flow, el token viene directamente
       access_token = result.params.access_token;
       id_token = result.params.id_token;
     } else {
-      // En Móvil usamos Auth Code Flow. Google no pide Client Secret para apps nativas.
       try {
         const tokenResult = await AuthSession.exchangeCodeAsync({
           code: result.params.code,
