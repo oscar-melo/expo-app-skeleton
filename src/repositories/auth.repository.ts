@@ -2,7 +2,8 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { AuthResult } from '@/model/types';
 import type { IAuthRepository } from '@/model/ports';
-import { GOOGLE_WEB_CLIENT_ID } from '@/config/env';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID } from '@/config/env';
+import { Platform } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -12,9 +13,14 @@ WebBrowser.maybeCompleteAuthSession();
  */
 export class AuthRepository implements IAuthRepository {
   async loginWithGoogle(): Promise<AuthResult | null> {
-    const clientId = GOOGLE_WEB_CLIENT_ID;
+    const clientId = Platform.select({
+      ios: GOOGLE_IOS_CLIENT_ID,
+      android: GOOGLE_ANDROID_CLIENT_ID,
+      default: GOOGLE_WEB_CLIENT_ID,
+    });
+
     if (!clientId) {
-      console.warn('GOOGLE_WEB_CLIENT_ID not set; auth will not work.');
+      console.warn(`No Google Client ID set for platform: ${Platform.OS}`);
       return null;
     }
 
@@ -28,60 +34,43 @@ export class AuthRepository implements IAuthRepository {
       console.log('[Auth] Redirect URI para Google Cloud Console:', redirectUri);
     }
 
+    // 1️⃣ Get Google's OAuth endpoints
+    const discovery = await AuthSession.fetchDiscoveryAsync(
+      'https://accounts.google.com'
+    );
+
+    // 2️⃣ Create request
     const request = new AuthSession.AuthRequest({
       clientId,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      usePKCE: true,
-      responseType: AuthSession.ResponseType.Code,
+      usePKCE: false, // Explicitly disable PKCE for Implicit Flow
+      responseType: AuthSession.ResponseType.Token, // 🔹 Cambiado a Token (Implicit Flow)
     });
 
-    await request.makeAuthUrlAsync();
-    const result = await AuthSession.startAsync({ authUrl: request.url });
+    // 3️⃣ Generate URL using discovery
+    await request.makeAuthUrlAsync(discovery);
+
+    // 4️⃣ Start auth flow
+    const result = await request.promptAsync(discovery);
 
     if (result.type !== 'success') {
       return null;
     }
 
-    const { code } = result.params;
-    if (!code) return null;
+    const { access_token } = result.params;
+    if (!access_token) return null;
 
-    const codeVerifier = request.codeVerifier ?? undefined;
-    const tokenResult = await this.exchangeCodeForTokens(code, clientId, redirectUri, codeVerifier);
-    if (!tokenResult) return null;
-
-    const user = await this.fetchUserInfo(tokenResult.access_token);
+    const user = await this.fetchUserInfo(access_token);
     if (!user) return null;
 
     return {
       user,
-      accessToken: tokenResult.access_token,
-      idToken: tokenResult.id_token,
+      accessToken: access_token,
+      // En el flujo implícito estándar, el id_token suele venir también si se pide, 
+      // pero el access_token es el principal que usamos para la API de userinfo.
+      idToken: result.params.id_token,
     };
-  }
-
-  private async exchangeCodeForTokens(
-    code: string,
-    clientId: string,
-    redirectUri: string,
-    codeVerifier?: string
-  ): Promise<{ access_token: string; id_token?: string } | null> {
-    const params: Record<string, string> = {
-      code,
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
-    };
-    if (codeVerifier) params.code_verifier = codeVerifier;
-    const body = new URLSearchParams(params);
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { access_token: string; id_token?: string };
-    return { access_token: data.access_token, id_token: data.id_token };
   }
 
   private async fetchUserInfo(accessToken: string): Promise<AuthResult['user'] | null> {

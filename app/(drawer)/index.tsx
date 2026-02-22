@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { AppText, Button } from '@/ui/components';
 import { useAuthStore } from '@/ui/stores/authStore';
 import { useServices } from '@/context/ServicesContext';
@@ -36,9 +36,12 @@ export default function HomeScreen() {
         <View style={styles.spacer} />
         {user ? (
           <View style={styles.userBlock}>
-            <AppText variant="subtitle">Sesión iniciada</AppText>
-            <AppText variant="body">{user.name ?? user.email}</AppText>
-            <AppText variant="caption">{user.email}</AppText>
+            {user.picture && (
+              <Image source={{ uri: user.picture }} style={styles.profilePic} />
+            )}
+            <AppText variant="subtitle">¡Bienvenido!</AppText>
+            <AppText variant="body">Nombre: {user.name ?? 'No disponible'}</AppText>
+            <AppText variant="caption">Email: {user.email}</AppText>
             <View style={styles.buttonRow}>
               <Button title="Cerrar sesión" onPress={handleLogout} variant="secondary" />
             </View>
@@ -80,5 +83,11 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     marginTop: theme.spacing.md,
+  },
+  profilePic: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginBottom: theme.spacing.sm,
   },
 });

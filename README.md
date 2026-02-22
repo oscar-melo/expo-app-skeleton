@@ -39,9 +39,11 @@ La app funciona sin configurar Google Auth, pero el botón de login no completar
 2. Crea credenciales OAuth 2.0 (tipo **Aplicación web**) y copia el **Client ID**.
 3. Crea un archivo `.env` en la raíz:
    ```
-   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=tu-client-id.apps.googleusercontent.com
+   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=tu-client-id-web.apps.googleusercontent.com
+   EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=tu-client-id-android (Solo para móvil nativo)
+   EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=tu-client-id-ios (Solo para móvil nativo)
    ```
-4. Añade en Google Cloud las URIs de redirección que te muestre la app en consola (ver [`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md) para la guía completa).
+4. Añade en Google Cloud las URIs de redirección que te muestre la app en consola al probar en web. (Ver [`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md) para la guía completa detallada, incluyendo soporte móvil).
 
 ---
 
@@ -50,7 +52,7 @@ La app funciona sin configurar Google Auth, pero el botón de login no completar
 ### 🌐 Web (la más rápida para empezar)
 
 ```bash
-npm run web
+npm run start:no-coop
 ```
 
 Abre automáticamente `http://localhost:8081` en el navegador. No requiere nada extra.
