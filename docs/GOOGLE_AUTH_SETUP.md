@@ -42,15 +42,19 @@ Para soportar todas las plataformas, deberás crear diferentes "IDs de cliente":
    - **APIs y servicios** → **Credenciales** → **Crear credenciales** → **ID de cliente de OAuth**.
    - **Tipo de aplicación**: **Aplicación web**.
    - **Nombre**: p. ej. `Skeleton App Web`.
+   - **URIs de redirección autorizados**: Debes añadir `http://localhost:8081/auth`.
    - Copia el **ID de cliente** generado.
 
-2. **Para Android (Opcional):**
+2. **Para Android:**
    - **Tipo de aplicación**: **Android**.
-   - Te pedirá el Nombre del paquete (ej. `com.tudominio.skeletonapp`) y el certificado SHA-1 (puedes obtenerlo corriendo `eas credentials` en tu terminal).
+   - **Nombre**: p. ej. `Skeleton App Android`.
+   - **Nombre del paquete**: Debe coincidir **exactamente** con el valor de `PACKAGE_NAME` definido en `app.config.ts` (p. ej. `com.skeletonapp`).
+   - **Certificado SHA-1**: Obtenlo corriendo `eas credentials` y seleccionando Android.
+   - **Configuración avanzada (Importante)**: Asegúrate de que la opción **"Habilitar el esquema de URI personalizado"** (o similar según la versión de la consola) esté activa. Esto permite que Google acepte redirecciones que no sean `https`.
 
-3. **Para iOS (Opcional):**
+3. **Para iOS:**
    - **Tipo de aplicación**: **iOS**.
-   - Te pedirá el Bundle ID (ej. `com.tudominio.skeletonapp`).
+   - **Nombre del paquete (Bundle ID)**: Debe coincidir con `PACKAGE_NAME` en `app.config.ts`.
 
 ---
 
@@ -60,31 +64,30 @@ En la raíz del proyecto crea un archivo `.env` (si no existe) con:
 
 ```bash
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=EL_ID_WEB_QUE_COPIASTE.apps.googleusercontent.com
-EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=EL_ID_ANDROID_AQUI
-EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=EL_ID_IOS_AQUI
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=EL_ID_ANDROID_AQUI.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=EL_ID_IOS_AQUI.apps.googleusercontent.com
 ```
 
-Nota: La app utiliza el **Implicit Flow**, por lo que **NO** necesitas un Client Secret.
-El archivo `.env` ya está en `.gitignore`, no se sube al repositorio.
+Nota: La app utiliza el **Implicit Flow** en Web y **Auth Code con PKCE** en Móvil. **NO** necesitas un Client Secret.
 
 ---
 
-## 5. Obtener la redirect URI que usa la app (Para Web)
+## 5. Configuración de Redirección (Redirect URI)
 
-*Nota: Para evitar el error de `Cross-Origin-Opener-Policy` en tu navegador local, usa el comando `start:no-coop`.*
+### Para Web
+La URI es generada por Expo y suele ser:
+`http://localhost:8081/auth` (debes registrarla en el cliente Web en Google Console).
 
-1. En la terminal, desde la raíz del proyecto:
-   ```bash
-   npm run start:no-coop
-   ```
-2. Presiona `w` para abrir en web (p. ej. `http://localhost:8081`).
-3. Abre la **consola del navegador** (F12 → pestaña *Console*).
-4. Pulsa en la app **“Iniciar sesión con Google”**.
-5. En la consola debería salir un mensaje como:
-   ```text
-   [Auth] Redirect URI para Google Cloud Console: https://...
-   ```
-   o `http://localhost:8081/...` según el entorno. **Copia esa URI tal cual.**
+### Para Móvil (Android/iOS)
+Google exige un formato estrictamente ligado a tu nombre de paquete. La aplicación utiliza:
+`com.tu.paquete:/oauth2redirect/google` (donde `com.tu.paquete` es tu `PACKAGE_NAME`).
+
+**IMPORTANTE:** No necesitas registrar este "Path" manualmente en la consola de Google para los clientes de Android/iOS; Google lo infiere del nombre del paquete, pero **DEBES** configurar el `scheme` correctamente en tu `app.config.ts` para que el celular sepa abrir la app.
+
+---
+
+## 6. Ejecución y Pruebas
+...
 
 ---
 

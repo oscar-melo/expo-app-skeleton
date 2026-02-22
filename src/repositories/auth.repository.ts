@@ -4,6 +4,7 @@ import type { AuthResult } from '@/model/types';
 import type { IAuthRepository } from '@/model/ports';
 import { GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID } from '@/config/env';
 import { Platform } from 'react-native';
+import * as Application from 'expo-application';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,14 +25,15 @@ export class AuthRepository implements IAuthRepository {
       return null;
     }
 
+    const nativeScheme = Application.applicationId ?? 'com.skeletonapp';
     const redirectUri = AuthSession.makeRedirectUri({
       preferLocalhost: true,
       ...Platform.select({
         android: {
-          native: 'com.skeletonapp:/oauth2redirect/google'
+          native: `${nativeScheme}:/oauth2redirect/google`
         },
         ios: {
-          native: 'com.skeletonapp:/oauth2redirect/google'
+          native: `${nativeScheme}:/oauth2redirect/google`
         },
         default: {
           scheme: 'skeletonapp',
