@@ -87,32 +87,29 @@ Google exige un formato estrictamente ligado a tu nombre de paquete. La aplicaci
 ---
 
 ## 6. Ejecución y Pruebas
-...
+
+Para probar el flujo completo en desarrollo:
+
+1. **Lanza el servidor de Expo (Web):**
+   ```bash
+   npm run start:no-coop
+   ```
+2. **Prueba el inicio de sesión:**
+   Presiona `w` para abrir en el navegador. Haz clic en "Iniciar sesión con Google". Si configuraste la URI `http://localhost:8081/auth` correctamente en Google Console, el login debería ser exitoso.
+
+3. **Prueba el inicio de sesión (Móvil):**
+   Asegúrate de haber seguido los pasos del punto 8 para generar un **Development Build**. Una vez instalado en el celular, inicia el servidor con:
+   ```bash
+   npm run start:no-coop -- --dev-client
+   ```
 
 ---
 
-## 6. Añadir la redirect URI en Google Cloud
+## 7. Solución de Problemas (Troubleshooting)
 
-1. Vuelve a **Google Cloud Console** → **Credenciales** → tu cliente OAuth 2.0 → **Editar**.
-2. En **URIs de redirección autorizados** → **Añadir URI**.
-3. Pega la URI que copiaste del log (la que empieza por `http://localhost...` o `https://...`).
-4. Guarda.
-
----
-
-## 7. Probar de nuevo
-
-1. Recarga la app en el navegador (o reinicia `expo start --web` si cambiaste algo de env).
-2. Pulsa otra vez **“Iniciar sesión con Google”**.
-3. Deberías ir a la pantalla de Google, elegir cuenta y volver a la app con nombre y correo mostrados.
-
----
-
-## Si algo falla
-
-- **Redirect URI no válido**: la URI que aparece en la consola debe coincidir **exactamente** con una de las URIs autorizadas en Google (incluido `http` vs `https` y el puerto).
-- **Acceso denegado / 403**: en modo “Externo”, añade tu cuenta en **Usuarios de prueba** en la pantalla de consentimiento.
-- **Variable no cargada**: reinicia el servidor de Expo borrando la caché después de crear o cambiar el `.env` usandó `npm run start:no-coop -- -c`.
+- **Redirect URI no válido**: La URI que aparece en el error de Google debe coincidir **exactamente** con una de las URIs autorizadas en Google Console.
+- **Acceso denegado / 403**: Si el proyecto está en modo "Externo" y en estado de "Prueba", debes añadir tu correo en la sección **Usuarios de prueba** de la pantalla de consentimiento.
+- **Variable no cargada**: Si cambias el `.env`, reinicia el servidor de Expo borrando la caché: `npm run start:no-coop -- -c`.
 
 ---
 
