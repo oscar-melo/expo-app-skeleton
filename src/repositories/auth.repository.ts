@@ -25,12 +25,20 @@ export class AuthRepository implements IAuthRepository {
     }
 
     const redirectUri = AuthSession.makeRedirectUri({
-      scheme: 'skeletonapp',
-      path: 'auth',
       preferLocalhost: true,
       ...Platform.select({
-        android: { native: 'com.skeletonapp:/oauth2redirect/google' },
-        ios: { native: 'com.skeletonapp:/oauth2redirect/google' },
+        android: {
+          scheme: 'com.skeletonapp',
+          path: 'oauth2redirect/google'
+        },
+        ios: {
+          scheme: 'com.skeletonapp',
+          path: 'oauth2redirect/google'
+        },
+        default: {
+          scheme: 'skeletonapp',
+          path: 'auth'
+        },
       }),
     });
 
@@ -45,12 +53,13 @@ export class AuthRepository implements IAuthRepository {
     );
 
     // 2️⃣ Create request
+    const isWeb = Platform.OS === 'web';
     const request = new AuthSession.AuthRequest({
       clientId,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      usePKCE: false, // Explicitly disable PKCE for Implicit Flow
-      responseType: AuthSession.ResponseType.Token, // 🔹 Cambiado a Token (Implicit Flow)
+      usePKCE: !isWeb, // Los clientes nativos obligan a usar PKCE
+      responseType: isWeb ? AuthSession.ResponseType.Token : AuthSession.ResponseType.Code,
     });
 
     // 3️⃣ Generate URL using discovery
@@ -63,7 +72,31 @@ export class AuthRepository implements IAuthRepository {
       return null;
     }
 
-    const { access_token } = result.params;
+    let access_token = '';
+    let id_token = '';
+
+    if (isWeb) {
+      // En Web usamos Implicit Flow, el token viene directamente
+      access_token = result.params.access_token;
+      id_token = result.params.id_token;
+    } else {
+      // En Móvil usamos Auth Code Flow. Google no pide Client Secret para apps nativas.
+      try {
+        const tokenResult = await AuthSession.exchangeCodeAsync({
+          code: result.params.code,
+          clientId,
+          redirectUri,
+          extraParams: request.codeVerifier ? { code_verifier: request.codeVerifier } : undefined,
+        }, discovery);
+
+        access_token = tokenResult.accessToken;
+        id_token = tokenResult.idToken ?? '';
+      } catch (e) {
+        console.error('Error exchanging code for token:', e);
+        return null;
+      }
+    }
+
     if (!access_token) return null;
 
     const user = await this.fetchUserInfo(access_token);
@@ -72,9 +105,7 @@ export class AuthRepository implements IAuthRepository {
     return {
       user,
       accessToken: access_token,
-      // En el flujo implícito estándar, el id_token suele venir también si se pide, 
-      // pero el access_token es el principal que usamos para la API de userinfo.
-      idToken: result.params.id_token,
+      idToken: id_token,
     };
   }
 
