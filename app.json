@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "skeletonapp",
+    "scheme": [
+      "skeletonapp",
+      "com.skeletonapp"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.skeletonapp"

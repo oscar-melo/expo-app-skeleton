@@ -27,6 +27,11 @@ export class AuthRepository implements IAuthRepository {
     const redirectUri = AuthSession.makeRedirectUri({
       scheme: 'skeletonapp',
       path: 'auth',
+      preferLocalhost: true,
+      ...Platform.select({
+        android: { native: 'com.skeletonapp:/oauth2redirect/google' },
+        ios: { native: 'com.skeletonapp:/oauth2redirect/google' },
+      }),
     });
 
     // En desarrollo: revisa la consola para copiar esta URI a "URIs de redirección autorizados" en Google Cloud.
