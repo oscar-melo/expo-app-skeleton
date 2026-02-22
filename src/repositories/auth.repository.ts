@@ -28,12 +28,10 @@ export class AuthRepository implements IAuthRepository {
       preferLocalhost: true,
       ...Platform.select({
         android: {
-          scheme: 'com.skeletonapp',
-          path: 'oauth2redirect/google'
+          native: 'com.skeletonapp:/oauth2redirect/google'
         },
         ios: {
-          scheme: 'com.skeletonapp',
-          path: 'oauth2redirect/google'
+          native: 'com.skeletonapp:/oauth2redirect/google'
         },
         default: {
           scheme: 'skeletonapp',
