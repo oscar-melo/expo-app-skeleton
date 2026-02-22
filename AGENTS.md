@@ -82,4 +82,5 @@ Antes de implementar cualquier cambio, leer:
 - **Nuevos componentes**: crear en `src/ui/components/` y exportar desde `src/ui/components/index.ts`.
 - **Variables de entorno**: prefijo `EXPO_PUBLIC_` para que estén disponibles en cliente. Definirlas en `.env` (ya en `.gitignore`) y tipadas en `src/config/env.ts`.
 - **Path alias**: `@/` apunta a `src/` (configurado en `tsconfig.json` y `babel.config.js`).
+- **Garantía de Calidad**: siempre que se cambie algo del código, se debe asegurar que las pruebas pasan (`npm test`) y que la cobertura es al menos similar o mejor a la anterior.
 - **Estado global**: Zustand. No pasar props profundas; usar stores en `src/ui/stores/`.

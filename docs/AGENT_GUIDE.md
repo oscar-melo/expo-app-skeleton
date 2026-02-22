@@ -196,7 +196,17 @@ Para configurar Google OAuth en local, ver [`docs/GOOGLE_AUTH_SETUP.md`](GOOGLE_
 
 ---
 
-## 6. Limitaciones y recomendaciones (web vs móvil)
+## 6. Calidad y Pruebas
+
+Como agente de IA, tienes la **obligación** de mantener la estabilidad del proyecto:
+
+1. **Ejecutar pruebas**: Antes de dar por terminada una tarea, ejecuta `npm test` para asegurar que no hay regresiones.
+2. **Mantener la cobertura**: Si añades nueva lógica, añade sus pruebas correspondientes. La cobertura total del proyecto debe mantenerse o mejorar.
+3. **Pruebas en UI**: Si cambias componentes visuales, verifica que los tests de renderizado y eventos sigan pasando.
+
+---
+
+## 7. Limitaciones y recomendaciones (web vs móvil)
 
 | Aspecto | Web | Móvil |
 |---|---|---|

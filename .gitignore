@@ -32,3 +32,6 @@ yarn-error.log*
 
 # Metro
 .metro-health-check*
+
+# Testing
+coverage/
