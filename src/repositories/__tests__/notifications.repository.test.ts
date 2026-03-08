@@ -60,7 +60,7 @@ describe('NotificationsRepository', () => {
             await repository.saveNotification(notification);
 
             expect(FileSystem.writeAsStringAsync).toHaveBeenCalledWith(
-                expect.stringContaining('notifications.json'),
+                expect.stringContaining('notifications_all.json'),
                 expect.stringContaining('Hello')
             );
         });
@@ -90,7 +90,7 @@ describe('NotificationsRepository', () => {
 
             await repository.clearNotifications();
             expect(FileSystem.deleteAsync).toHaveBeenCalledWith(
-                expect.stringContaining('notifications.json'),
+                expect.stringContaining('notifications_all.json'),
                 { idempotent: true }
             );
         });

@@ -1,6 +1,6 @@
 import { NotificationRecord } from '../types/notification';
 
 export interface INotificationsRepository {
-    saveNotification(notification: Omit<NotificationRecord, 'id'>): Promise<void>;
-    getNotifications(): Promise<NotificationRecord[]>;
+    saveNotification(notification: Omit<NotificationRecord, 'id'>, collection?: string): Promise<void>;
+    getNotifications(collection?: string): Promise<NotificationRecord[]>;
 }

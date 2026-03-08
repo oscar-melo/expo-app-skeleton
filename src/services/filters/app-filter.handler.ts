@@ -1,0 +1,33 @@
+import { AbstractNotificationHandler } from './notification-filter';
+import { SettingsRepository } from '@/repositories/settings.repository';
+
+export class AppFilterHandler extends AbstractNotificationHandler {
+    private settingsRepo: SettingsRepository;
+
+    constructor() {
+        super();
+        this.settingsRepo = SettingsRepository.getInstance();
+    }
+
+    public async handle(notification: any): Promise<void> {
+        if (!notification || !notification.app) {
+            return super.handle(notification);
+        }
+
+        const settings = await this.settingsRepo.getSettings();
+        const selectedApps = settings.selectedApps;
+
+        // Si no hay apps seleccionadas, se escucha todo
+        if (!selectedApps || selectedApps.length === 0) {
+            return super.handle(notification);
+        }
+
+        // Si hay apps seleccionadas y esta app está en la lista, pasa
+        if (selectedApps.includes(notification.app)) {
+            return super.handle(notification);
+        }
+
+        // Si la app no está seleccionada, se detiene la cadena aquí
+        console.log(`[AppFilterHandler] Dropping notification from unselected app: ${notification.app}`);
+    }
+}

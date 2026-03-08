@@ -6,7 +6,7 @@ import { theme } from '@/ui/theme';
 import { NotificationsRepository } from '@/repositories/notifications.repository';
 import { NotificationRecord } from '@/model/ports';
 
-export default function NotificationsScreen() {
+export default function AllEventsScreen() {
     const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -17,8 +17,7 @@ export default function NotificationsScreen() {
     const loadNotifications = async () => {
         setLoading(true);
         const repo = new NotificationsRepository();
-        // Load ONLY from the 'filtered' collection as requested by the user
-        const data = await repo.getNotifications('filtered');
+        const data = await repo.getNotifications('all');
         setNotifications(data);
         setLoading(false);
     };
@@ -26,7 +25,7 @@ export default function NotificationsScreen() {
     if (Platform.OS === 'web') {
         return (
             <View style={styles.container}>
-                <Stack.Screen options={{ title: 'Registros Filtrados' }} />
+                <Stack.Screen options={{ title: 'Todos los eventos' }} />
                 <View style={styles.centered}>
                     <AppText variant="subtitle">No disponible en Web</AppText>
                     <AppText variant="caption">Las notificaciones solo se capturan en la versión móvil (Android).</AppText>
@@ -48,11 +47,11 @@ export default function NotificationsScreen() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: 'Registros Filtrados' }} />
+            <Stack.Screen options={{ title: 'Todos los eventos' }} />
             {notifications.length === 0 && !loading ? (
                 <View style={styles.centered}>
-                    <AppText variant="subtitle">No hay registros filtrados</AppText>
-                    <AppText variant="caption">Las notificaciones que cumplan con las reglas aparecerán aquí.</AppText>
+                    <AppText variant="subtitle">No hay eventos</AppText>
+                    <AppText variant="caption">Aún no se ha capturado ningún evento.</AppText>
                 </View>
             ) : (
                 <FlatList

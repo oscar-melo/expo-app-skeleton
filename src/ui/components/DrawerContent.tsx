@@ -31,7 +31,9 @@ const MENU_GROUPS = [
   {
     title: 'Herramientas',
     items: [
-      { label: 'Registros', route: '/notifications' },
+      { label: 'Todos los eventos', route: '/all_events' },
+      { label: 'Registros (Filtrados)', route: '/notifications' },
+      { label: 'Configuración', route: '/settings' },
     ],
   },
 ] as const;

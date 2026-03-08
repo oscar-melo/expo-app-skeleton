@@ -1,10 +1,19 @@
 import * as RNNotificationListenerModule from 'react-native-notification-listener';
 import { AppRegistry, Platform } from 'react-native';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
+import { SaveAllHandler } from './filters/save-all.handler';
+import { AppFilterHandler } from './filters/app-filter.handler';
+import { RegexFilterHandler } from './filters/regex-filter.handler';
 
 // Manejo de importación segura
 const RNNotificationListener = (RNNotificationListenerModule as any).default || RNNotificationListenerModule;
 const HeadlessJsName = RNNotificationListenerModule.RNAndroidNotificationListenerHeadlessJsName || 'RNAndroidNotificationListenerHeadlessJs';
+
+// Setup the filter chain
+const saveAllHandler = new SaveAllHandler();
+const appFilterHandler = new AppFilterHandler();
+const regexFilterHandler = new RegexFilterHandler();
+
+saveAllHandler.setNext(appFilterHandler).setNext(regexFilterHandler);
 
 // Tarea principal (Headless Task)
 export const headlessNotificationListener = async ({ notification }: any) => {
@@ -18,25 +27,13 @@ export const headlessNotificationListener = async ({ notification }: any) => {
         }
     }
 
-    if (!event || (!event.text && !event.title)) return;
+    if (!event) return;
 
-    const now = new Date();
-    const fecha = now.toLocaleDateString();
-    const hora = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    let fuente = 'App';
-    if (event.app === 'com.google.android.apps.messaging' || event.app === 'com.android.mms') {
-        fuente = 'SMS';
+    try {
+        await saveAllHandler.handle(event);
+    } catch (error) {
+        console.error('[NotificationListener] Error processing notification chain:', error);
     }
-
-    const repo = new NotificationsRepository();
-    await repo.saveNotification({
-        fuente,
-        origen: event.title || event.app,
-        contenido: event.text || event.titleBig || 'Notificación sin texto',
-        fecha,
-        hora,
-    });
 };
 
 // Registrar la tarea Headless tan pronto como se cargue el archivo

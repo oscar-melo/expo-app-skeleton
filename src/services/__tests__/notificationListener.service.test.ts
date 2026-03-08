@@ -3,8 +3,25 @@ import RNNotificationListener from 'react-native-notification-listener';
 import { NotificationsRepository } from '@/repositories/notifications.repository';
 import { AppRegistry, Platform } from 'react-native';
 
-// Mock del repositorio
+// Mock del repositorio de notificaciones
 jest.mock('@/repositories/notifications.repository');
+
+// Mock del repositorio de configuraciones
+jest.mock('@/repositories/settings.repository', () => {
+    return {
+        SettingsRepository: {
+            getInstance: jest.fn().mockReturnValue({
+                getSettings: jest.fn().mockResolvedValue({
+                    notificationRegex: '',
+                    selectedApps: [],
+                    knownApps: [],
+                }),
+                saveSettings: jest.fn(),
+                addKnownApp: jest.fn(),
+            }),
+        },
+    };
+});
 
 // Mock del listener
 jest.mock('react-native-notification-listener', () => {
@@ -76,7 +93,8 @@ describe('NotificationListenerService', () => {
                     fuente: 'SMS',
                     origen: '123456',
                     contenido: 'Hello SMS',
-                })
+                }),
+                'all'
             );
         });
 
@@ -94,7 +112,8 @@ describe('NotificationListenerService', () => {
                     fuente: 'App',
                     origen: 'WhatsApp',
                     contenido: 'New message',
-                })
+                }),
+                'all'
             );
         });
 
