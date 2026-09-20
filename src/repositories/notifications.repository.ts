@@ -54,4 +54,21 @@ export class NotificationsRepository implements INotificationsRepository {
             console.error(`[NotificationsRepo] Error clearing notifications for ${collection}:`, error);
         }
     }
+
+    async updateNotification(id: string, updates: Partial<NotificationRecord>, collection: string = 'filtered'): Promise<void> {
+        if (Platform.OS === 'web') return;
+        try {
+            const records = await this.getNotifications(collection);
+            const index = records.findIndex(r => r.id === id);
+            if (index !== -1) {
+                records[index] = { ...records[index], ...updates };
+                await FileSystem.writeAsStringAsync(
+                    this.getFileName(collection),
+                    JSON.stringify(records, null, 2)
+                );
+            }
+        } catch (error) {
+            console.error(`[NotificationsRepo] Error updating notification ${id}:`, error);
+        }
+    }
 }

@@ -5,4 +5,7 @@ export interface NotificationRecord {
   contenido: string;
   fecha: string;
   hora: string;
+  monto?: string;
+  tipoTransaccion?: 'ingreso' | 'egreso';
+  categoria?: string;
 }

@@ -1,19 +1,21 @@
+import { NotificationRecord } from '@/model/types/notification';
+
 export interface INotificationsFilterHandler {
     setNext(handler: INotificationsFilterHandler): INotificationsFilterHandler;
-    handle(notification: any): Promise<void>;
+    handle(notification: any, record?: Partial<NotificationRecord>): Promise<void>;
 }
 
 export abstract class AbstractNotificationHandler implements INotificationsFilterHandler {
-    private nextHandler: INotificationsFilterHandler | null = null;
+    protected nextHandler: INotificationsFilterHandler | null = null;
 
     public setNext(handler: INotificationsFilterHandler): INotificationsFilterHandler {
         this.nextHandler = handler;
         return handler;
     }
 
-    public async handle(notification: any): Promise<void> {
+    public async handle(notification: any, record?: Partial<NotificationRecord>): Promise<void> {
         if (this.nextHandler) {
-            await this.nextHandler.handle(notification);
+            await this.nextHandler.handle(notification, record);
         }
     }
 }

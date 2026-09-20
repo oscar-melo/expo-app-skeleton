@@ -29,20 +29,22 @@ export class SaveAllHandler extends AbstractNotificationHandler {
         const origen = notification.title || notification.app;
         const contenido = notification.text || notification.titleBig || 'Notificación sin texto';
 
-        // Save to 'all' collection
-        await this.repo.saveNotification({
+        const record = {
             fuente,
             origen,
             contenido,
             fecha,
             hora,
-        }, 'all');
+        };
+
+        // Save to 'all' collection
+        await this.repo.saveNotification(record, 'all');
 
         // Add app to known apps
         if (notification.app) {
             await this.settingsRepo.addKnownApp(notification.app);
         }
 
-        return super.handle(notification);
+        return super.handle(notification, record);
     }
 }

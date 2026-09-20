@@ -3,6 +3,7 @@ import { AppRegistry, Platform } from 'react-native';
 import { SaveAllHandler } from './filters/save-all.handler';
 import { AppFilterHandler } from './filters/app-filter.handler';
 import { RegexFilterHandler } from './filters/regex-filter.handler';
+import { CurrencyFilterHandler } from './filters/currency-filter.handler';
 
 // Manejo de importación segura
 const RNNotificationListener = (RNNotificationListenerModule as any).default || RNNotificationListenerModule;
@@ -12,8 +13,12 @@ const HeadlessJsName = RNNotificationListenerModule.RNAndroidNotificationListene
 const saveAllHandler = new SaveAllHandler();
 const appFilterHandler = new AppFilterHandler();
 const regexFilterHandler = new RegexFilterHandler();
+const currencyFilterHandler = new CurrencyFilterHandler();
 
-saveAllHandler.setNext(appFilterHandler).setNext(regexFilterHandler);
+saveAllHandler
+    .setNext(appFilterHandler)
+    .setNext(regexFilterHandler)
+    .setNext(currencyFilterHandler);
 
 // Tarea principal (Headless Task)
 export const headlessNotificationListener = async ({ notification }: any) => {

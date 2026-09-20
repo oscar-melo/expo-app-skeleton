@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Switch, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, Switch, TextInput, Platform } from 'react-native';
 import { AppText } from '@/ui/components/AppText';
 import { Button } from '@/ui/components/Button';
 import { SettingsRepository, NotificationSettings } from '@/repositories/settings.repository';
@@ -69,6 +69,21 @@ export const SettingsScreen = () => {
                     placeholder="Ejemplo: Bancolombia|pago|\$"
                     placeholderTextColor="#999"
                 />
+            </View>
+
+            <View style={styles.section}>
+                <AppText variant="subtitle" style={styles.sectionTitle}>
+                    Detección de Moneda (Fijo)
+                </AppText>
+                <AppText variant="body" style={styles.description}>
+                    Este patrón se aplica automáticamente para extraer valores monetarios de los mensajes filtrados.
+                </AppText>
+                <View style={[styles.input, styles.readOnlyInput]}>
+                    <AppText style={styles.codeText}>{`(?:\$|COP|USD)\\s?(\\d+(?:[.,]\\d{3})*(?:[.,]\\d{2})?)`}</AppText>
+                </View>
+                <AppText variant="caption" style={styles.infoText}>
+                    Nota: Solo los mensajes con valores identificables aparecerán en el listado de Registros.
+                </AppText>
             </View>
 
             <View style={styles.section}>
@@ -160,5 +175,18 @@ const styles = StyleSheet.create({
         color: theme.colors.error,
         textAlign: 'center',
         marginTop: theme.spacing.sm,
+    },
+    readOnlyInput: {
+        backgroundColor: '#f1f5f9',
+        borderColor: '#cbd5e1',
+    },
+    codeText: {
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+        fontSize: theme.fontSize.xs,
+        color: theme.colors.primary,
+    },
+    infoText: {
+        marginTop: theme.spacing.xs,
+        fontStyle: 'italic',
     },
 });

@@ -1,31 +1,28 @@
 import { AbstractNotificationHandler } from './notification-filter';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
 import { SettingsRepository } from '@/repositories/settings.repository';
+import { NotificationRecord } from '@/model/types/notification';
 
 export class RegexFilterHandler extends AbstractNotificationHandler {
-    private repo: NotificationsRepository;
     private settingsRepo: SettingsRepository;
 
     constructor() {
         super();
-        this.repo = new NotificationsRepository();
         this.settingsRepo = SettingsRepository.getInstance();
     }
 
-    public async handle(notification: any): Promise<void> {
+    public async handle(notification: any, record?: Partial<NotificationRecord>): Promise<void> {
         if (!notification) {
-            return super.handle(notification);
+            return super.handle(notification, record);
         }
 
         const settings = await this.settingsRepo.getSettings();
         const regexStr = settings.notificationRegex;
 
+        // Si no hay regex configurado, el usuario quiere filtrar pero no ha definido cómo.
+        // Asumimos que si no hay regex, no pasa el filtro de usuario (o podrías cambiar esto a que pase todo).
         if (!regexStr) {
-            // Si no hay regex configurado, no pasa a 'filtered' o depende de la lógica deseada.
-            // Según los requerimientos: "Filtro Expresion Regular (filtra los mensajes usando expresion regular)".
-            // Si no hay regex, consideramos que no hace match con nada (o podríamos guardarlo todo, asumimos no guardar).
-            console.log(`[RegexFilterHandler] No regex configured. Skipping save to 'filtered'.`);
-            return super.handle(notification);
+            console.log(`[RegexFilterHandler] No regex configured. Stopping chain.`);
+            return;
         }
 
         const contenido = notification.text || notification.titleBig || '';
@@ -33,34 +30,15 @@ export class RegexFilterHandler extends AbstractNotificationHandler {
         const fullText = `${title} ${contenido}`;
 
         try {
-            const regex = new RegExp(regexStr, 'i'); // case insensitive
+            const regex = new RegExp(regexStr, 'i');
             if (regex.test(fullText)) {
-                // Generar los metadatos para guardar
-                const now = new Date();
-                const fecha = now.toLocaleDateString();
-                const hora = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                let fuente = 'App';
-                if (notification.app === 'com.google.android.apps.messaging' || notification.app === 'com.android.mms') {
-                    fuente = 'SMS';
-                }
-                const origen = title || notification.app;
-
-                // Match found, save to filtered collection
-                await this.repo.saveNotification({
-                    fuente,
-                    origen,
-                    contenido: contenido || 'Notificación sin texto',
-                    fecha,
-                    hora,
-                }, 'filtered');
+                // Match found, pass to the next handler (e.g., CurrencyFilter)
+                return super.handle(notification, record);
             } else {
-                console.log(`[RegexFilterHandler] Notification text did not match regex ${regexStr}.`);
+                console.log(`[RegexFilterHandler] Notification text did not match user regex.`);
             }
         } catch (error) {
             console.error(`[RegexFilterHandler] Invalid regex expression: ${regexStr}`, error);
         }
-
-        return super.handle(notification);
     }
 }
