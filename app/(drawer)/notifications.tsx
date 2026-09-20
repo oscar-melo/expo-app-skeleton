@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, Platform, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, FlatList, Platform, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
 import { AppText } from '@/ui/components';
 import { theme } from '@/ui/theme';
@@ -8,14 +8,15 @@ import { NotificationRecord } from '@/model/types/notification';
 import { CurrencyFilterHandler } from '@/services/filters/currency-filter.handler';
 
 const TRANSACTION_TYPES = ['Ingreso', 'Egreso'] as const;
-const CATEGORIES = [
-    'Alimentos', 'Snacks', 'Impuestos', 'Deudas', 'Salario',
-    'Rendimientos', 'Mercado', 'Viajes', 'Otros'
-];
+const CATEGORIES_BY_TYPE = {
+    ingreso: ['Salario', 'Ingreso extra', 'Transferencia', 'Otro'],
+    egreso: ['Servicios', 'Compras', 'Transporte', 'Ocio', 'Deuda', 'Transferencia', 'Otro'],
+} as const;
 
 export default function NotificationsScreen() {
     const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const [categoryPickerItem, setCategoryPickerItem] = useState<NotificationRecord | null>(null);
     const repo = useMemo(() => new NotificationsRepository(), []);
 
     useEffect(() => {
@@ -53,14 +54,26 @@ export default function NotificationsScreen() {
     };
 
     const showCategoryPicker = (item: NotificationRecord) => {
-        Alert.alert(
-            'Categoría',
-            'Selecciona una categoría',
-            CATEGORIES.map(cat => ({
-                text: cat,
-                onPress: () => handleUpdateField(item.id, 'categoria', cat)
-            })).concat([{ text: 'Cancelar', style: 'cancel' } as any])
-        );
+        const categories = item.tipoTransaccion
+            ? CATEGORIES_BY_TYPE[item.tipoTransaccion]
+            : [];
+
+        if (categories.length === 0) {
+            Alert.alert('Categoría', 'Selecciona primero el tipo de transacción', [
+                { text: 'Cancelar', style: 'cancel' },
+            ]);
+            return;
+        }
+
+        setCategoryPickerItem(item);
+    };
+
+    const selectCategory = async (category: string) => {
+        if (!categoryPickerItem) return;
+
+        const itemId = categoryPickerItem.id;
+        setCategoryPickerItem(null);
+        await handleUpdateField(itemId, 'categoria', category);
     };
 
     const clearAll = async () => {
@@ -194,6 +207,39 @@ export default function NotificationsScreen() {
                     refreshing={loading}
                 />
             )}
+
+            <Modal
+                visible={categoryPickerItem !== null}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setCategoryPickerItem(null)}
+            >
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.categoryModal}>
+                        <AppText variant="subtitle">Categoría</AppText>
+                        <AppText variant="caption" style={styles.modalDescription}>
+                            Selecciona una categoría
+                        </AppText>
+                        <ScrollView style={styles.categoryList}>
+                            {categoryPickerItem && CATEGORIES_BY_TYPE[categoryPickerItem.tipoTransaccion!].map(category => (
+                                <TouchableOpacity
+                                    key={category}
+                                    style={styles.categoryOption}
+                                    onPress={() => selectCategory(category)}
+                                >
+                                    <AppText>{category}</AppText>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={() => setCategoryPickerItem(null)}
+                        >
+                            <AppText style={styles.cancelButtonText}>Cancelar</AppText>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -277,5 +323,42 @@ const styles = StyleSheet.create({
         color: '#475569',
         marginTop: 12,
         fontStyle: 'italic',
-    }
+    },
+    modalBackdrop: {
+        flex: 1,
+        justifyContent: 'center',
+        backgroundColor: 'rgba(15, 23, 42, 0.45)',
+        padding: 24,
+    },
+    categoryModal: {
+        maxHeight: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 20,
+    },
+    modalDescription: {
+        marginTop: 4,
+        marginBottom: 12,
+    },
+    categoryList: {
+        flexGrow: 0,
+    },
+    categoryOption: {
+        minHeight: 44,
+        justifyContent: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e2e8f0',
+    },
+    cancelButton: {
+        minHeight: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 12,
+        borderRadius: 6,
+        backgroundColor: '#e2e8f0',
+    },
+    cancelButtonText: {
+        color: theme.colors.primary,
+        fontWeight: '700',
+    },
 });

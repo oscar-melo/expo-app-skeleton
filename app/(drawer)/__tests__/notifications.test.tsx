@@ -1,5 +1,6 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import NotificationsScreen from '../notifications';
 import { NotificationsRepository } from '@/repositories/notifications.repository';
 
@@ -75,5 +76,48 @@ describe('NotificationsScreen UI Rendering', () => {
 
         const naDisplay = await findByText('N/A');
         expect(naDisplay).toBeTruthy();
+    });
+
+    it('should show income categories in category popup', async () => {
+        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
+            getNotifications: jest.fn().mockResolvedValue([{
+                ...mockRecordWithMonto,
+                tipoTransaccion: 'ingreso',
+            }]),
+        }));
+
+        const { findByText } = render(<NotificationsScreen />);
+        await findByText('$ 9,000.00 COP');
+
+        fireEvent.press(await findByText('Seleccione'));
+
+        expect(await findByText('Salario')).toBeTruthy();
+        expect(await findByText('Ingreso extra')).toBeTruthy();
+        expect(await findByText('Transferencia')).toBeTruthy();
+        expect(await findByText('Otro')).toBeTruthy();
+        expect(await findByText('Cancelar')).toBeTruthy();
+    });
+
+    it('should show expense categories in category popup', async () => {
+        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
+            getNotifications: jest.fn().mockResolvedValue([{
+                ...mockRecordWithMonto,
+                tipoTransaccion: 'egreso',
+            }]),
+        }));
+
+        const { findByText } = render(<NotificationsScreen />);
+        await findByText('$ 9,000.00 COP');
+
+        fireEvent.press(await findByText('Seleccione'));
+
+        expect(await findByText('Servicios')).toBeTruthy();
+        expect(await findByText('Compras')).toBeTruthy();
+        expect(await findByText('Transporte')).toBeTruthy();
+        expect(await findByText('Ocio')).toBeTruthy();
+        expect(await findByText('Deuda')).toBeTruthy();
+        expect(await findByText('Transferencia')).toBeTruthy();
+        expect(await findByText('Otro')).toBeTruthy();
+        expect(await findByText('Cancelar')).toBeTruthy();
     });
 });

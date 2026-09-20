@@ -1,0 +1,138 @@
+diff --git a/node_modules/react-native-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNNotification.java b/node_modules/react-native-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNNotification.java
+index 644e692..03aef95 100644
+--- a/node_modules/react-native-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNNotification.java
++++ b/node_modules/react-native-notification-listener/android/src/main/java/com/lesimoes/androidnotificationlistener/RNNotification.java
+@@ -1,21 +1,12 @@
+ package com.lesimoes.androidnotificationlistener;
+ 
+-import android.graphics.BitmapFactory;
+ import android.service.notification.StatusBarNotification;
+ import android.text.TextUtils;
+ import android.app.Notification;
+ import android.util.Log;
+ import java.util.ArrayList;
+-import android.content.pm.PackageManager;
+-import android.content.res.Resources;
+-import android.graphics.drawable.Drawable;
+-import android.graphics.Bitmap;
+-import java.io.ByteArrayOutputStream;
+-import android.util.Base64;
+ import android.content.Context;
+ import java.lang.Exception;
+-import android.graphics.drawable.Icon;
+-import android.graphics.drawable.BitmapDrawable;
+ 
+ public class RNNotification {
+     private static final String TAG = "RNAndroidNotificationListener";
+@@ -32,10 +23,7 @@ public class RNNotification {
+     protected String audioContentsURI;
+     protected String imageBackgroundURI;
+     protected String extraInfoText;
+-    protected String icon;
+-    protected String image;
+     protected String time;
+-    protected String iconLarge;
+     public RNNotification(Context context, StatusBarNotification sbn) {
+         Notification notification = sbn.getNotification();
+ 
+@@ -54,9 +42,6 @@ public class RNNotification {
+             this.audioContentsURI = this.getPropertySafely(notification, Notification.EXTRA_AUDIO_CONTENTS_URI);
+             this.imageBackgroundURI = this.getPropertySafely(notification, Notification.EXTRA_BACKGROUND_IMAGE_URI);
+             this.extraInfoText = this.getPropertySafely(notification, Notification.EXTRA_INFO_TEXT);
+-            this.iconLarge = this.getNotificationLargeIcon(context, notification);
+-            this.icon = this.getNotificationIcon(context, notification);
+-            this.image = this.getNotificationImage(notification);
+             this.groupedMessages = this.getGroupedNotifications(notification);
+         } else {
+             Log.d(TAG, "The notification received has no data");
+@@ -96,90 +81,4 @@ public class RNNotification {
+         }
+     }
+ 
+-    private String getNotificationIcon(Context context, Notification notification) {
+-        try {
+-           
+-            String result = "";
+- 
+-            Icon iconInstance = notification.getSmallIcon();
+-            Drawable iconDrawable = iconInstance.loadDrawable(context);
+-            Bitmap iconBitmap = ((BitmapDrawable) iconDrawable).getBitmap();
+-
+-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+-            iconBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+-
+-            result = Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
+-
+-            return TextUtils.isEmpty(result) ? result : "data:image/png;base64," + result;
+-        } catch (Exception e) {
+-            Log.d(TAG, e.getMessage());
+-            return "";
+-        }
+-    }
+-    
+-    
+-    private String getNotificationLargeIcon(Context context, Notification notification) {
+-        try {
+-            
+-            String result = "";
+- 
+-            Icon iconInstance = notification.getLargeIcon();
+-            Drawable iconDrawable = iconInstance.loadDrawable(context);
+-            Bitmap iconBitmap = ((BitmapDrawable) iconDrawable).getBitmap();
+-
+-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+-            iconBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+-
+-            result = Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
+-
+-            return TextUtils.isEmpty(result) ? result : "data:image/png;base64," + result;
+-        } catch (Exception e) {
+-            Log.d(TAG, e.getMessage());
+-            return "";
+-        }
+-    }
+-
+-    private String getNotificationImage(Notification notification) {
+-        try {
+-            if (!notification.extras.containsKey(Notification.EXTRA_PICTURE)) return "";
+-
+-            Bitmap imageBitmap = (Bitmap) notification.extras.get(Notification.EXTRA_PICTURE);
+-
+-            BitmapFactory.Options options = new BitmapFactory.Options();
+-            options.inSampleSize = this.calculateInSampleSize(options, 100,100);
+-            options.inJustDecodeBounds = false;
+-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+-            imageBitmap.compress(Bitmap.CompressFormat.JPEG, 30, outputStream);
+-
+-            String result = Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT);
+-
+-            return TextUtils.isEmpty(result) ? result : "data:image/png;base64," + result;
+-        } catch (Exception e) {
+-            Log.d(TAG, e.getMessage());
+-            return "";
+-        }
+-    }
+-
+-    public int calculateInSampleSize(
+-            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+-        // Raw height and width of image
+-        final int height = options.outHeight;
+-        final int width = options.outWidth;
+-        int inSampleSize = 1;
+-
+-        if (height > reqHeight || width > reqWidth) {
+-
+-            final int halfHeight = height / 2;
+-            final int halfWidth = width / 2;
+-
+-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+-            // height and width larger than the requested height and width.
+-            while ((halfHeight / inSampleSize) >= reqHeight
+-                    && (halfWidth / inSampleSize) >= reqWidth) {
+-                inSampleSize *= 2;
+-            }
+-        }
+-
+-        return inSampleSize;
+-    }
+ }
