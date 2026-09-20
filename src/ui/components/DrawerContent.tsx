@@ -28,6 +28,14 @@ const MENU_GROUPS = [
       { label: 'Hola mundo', route: '/' },
     ],
   },
+  {
+    title: 'Herramientas',
+    items: [
+      { label: 'Todos los eventos', route: '/all_events' },
+      { label: 'Registros (Filtrados)', route: '/notifications' },
+      { label: 'Configuración', route: '/settings' },
+    ],
+  },
 ] as const;
 
 export function CustomDrawerContent(props: DrawerContentComponentProps) {
