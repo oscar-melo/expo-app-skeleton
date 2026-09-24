@@ -1,18 +1,15 @@
 import { AbstractNotificationHandler } from './notification-filter';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
+import type { INotificationsRepository } from '@/model/ports';
 import { NotificationRecord } from '@/model/types/notification';
 
 export class CurrencyFilterHandler extends AbstractNotificationHandler {
-    private repo: NotificationsRepository;
+    constructor(private readonly notificationsRepository: INotificationsRepository) {
+        super();
+    }
 
     // Regex para detectar valores monetarios como $500.000, $ 31,921, $6,950.00, $9,000.00, $1,000.00
     // Captura el símbolo/texto de moneda opcional y el valor numérico de forma flexible
     public static readonly CURRENCY_REGEX = /(?:\$|COP|USD)\s?(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)/i;
-
-    constructor() {
-        super();
-        this.repo = new NotificationsRepository();
-    }
 
     public async handle(notification: any, record?: Partial<NotificationRecord>): Promise<void> {
         if (!notification || !record) {
@@ -39,7 +36,7 @@ export class CurrencyFilterHandler extends AbstractNotificationHandler {
 
             console.log(`[CurrencyFilterHandler] Saving record to 'filtered':`, JSON.stringify(finalRecord));
             // Este es el último filtro mandatorio para la lista filtrada, así que guardamos aquí.
-            await this.repo.saveNotification(finalRecord, 'filtered');
+            await this.notificationsRepository.saveNotification(finalRecord, 'filtered');
 
             // Continuamos la cadena por si hay más procesadores futuros
             return super.handle(notification, finalRecord);

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Switch, TextInput, Platform } from 'react-native';
 import { AppText } from '@/ui/components/AppText';
 import { Button } from '@/ui/components/Button';
-import { SettingsRepository, NotificationSettings } from '@/repositories/settings.repository';
+import { useServices } from '@/context/ServicesContext';
+import type { NotificationSettings } from '@/model/types/settings';
 import { theme } from '@/ui/theme';
 
 export const SettingsScreen = () => {
+    const { settingsService } = useServices();
     const [settings, setSettings] = useState<NotificationSettings>({
         notificationRegex: '',
         selectedApps: [],
@@ -21,15 +23,13 @@ export const SettingsScreen = () => {
 
     const loadSettings = async () => {
         setLoading(true);
-        const repo = SettingsRepository.getInstance();
-        const data = await repo.getSettings();
+        const data = await settingsService.getSettings();
         setSettings(data);
         setLoading(false);
     };
 
     const handleSave = async () => {
-        const repo = SettingsRepository.getInstance();
-        await repo.saveSettings(settings);
+        await settingsService.saveSettings(settings);
         setSavedMessage('Configuración guardada exitosamente');
         setTimeout(() => setSavedMessage(''), 3000);
     };

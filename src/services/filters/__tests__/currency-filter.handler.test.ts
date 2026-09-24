@@ -8,8 +8,7 @@ describe('CurrencyFilterHandler', () => {
         mockRepo = {
             saveNotification: jest.fn().mockResolvedValue(undefined)
         };
-        handler = new CurrencyFilterHandler();
-        (handler as any).repo = mockRepo;
+        handler = new CurrencyFilterHandler(mockRepo);
     });
 
     const testCases = [

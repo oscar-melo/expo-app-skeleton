@@ -1,86 +1,80 @@
-# AGENTS.md — Contexto para agentes de IA
+# Contexto para agentes
 
-> Este archivo es leído automáticamente por agentes de IA modernos (Antigravity, Claude, Codex, etc.).
-> Contiene el contexto clave del proyecto para que puedas trabajar sin recorrer todo el código.
+## Proyecto
 
----
+Aplicación Expo 54 / React Native 0.81.5 con Expo Router, TypeScript, Zustand y Android `NotificationListenerService`.
+Captura notificaciones, filtra transacciones y guarda registros localmente.
 
-## Qué es este proyecto
+## Arquitectura obligatoria
 
-**Expo App Skeleton** — esqueleto de app con Expo (React Native) para móvil (iOS/Android) y web responsive.
-Usa **arquitectura limpia** con inversión de dependencias. El objetivo es servir de punto de partida para nuevas apps: clonar, renombrar y construir encima.
-
-Stack: Expo 52 · React Native 0.76 · Expo Router (file-based) · Drawer navigation · Zustand · TypeScript
-
----
-
-## Estructura de capas (Clean Architecture)
-
-```
-src/
-├── model/
-│   ├── ports/        → Interfaces (IAuthRepository, etc.) — la capa de dominio
-│   └── types/        → DTOs compartidos (AuthResult, User, etc.)
-├── services/         → Casos de uso; reciben puertos por inyección, nunca implementaciones concretas
-├── repositories/     → Implementan los puertos; integraciones externas (Google OAuth, APIs, etc.)
-├── context/
-│   └── ServicesContext.tsx  → Composition root: instancia repos y servicios, expone useServices()
-├── ui/
-│   ├── components/   → Componentes base (Button, AppText, SearchInput, DrawerContent) + index.ts
-│   ├── theme/        → theme.ts — colores, espaciado, tipografía, bordes (fuente única de verdad)
-│   ├── hooks/        → useResponsive.ts (breakpoints 600/900px)
-│   └── stores/       → Zustand stores (useAuthStore)
-├── config/           → env.ts (variables de entorno), menuFooter.ts
-└── shared/utils/     → Utilidades compartidas
-
-app/                  → Expo Router entry points
-├── _layout.tsx       → Root layout: GestureHandlerRootView + ServicesProvider
-└── (drawer)/
-    ├── _layout.tsx   → Drawer layout con CustomDrawerContent y screenOptions del tema
-    └── index.tsx     → Pantalla principal (única pantalla de ejemplo)
+```text
+UI -> Services -> Ports <- Repositories
 ```
 
----
+- La UI nunca importa ni instancia repositorios.
+- Los servicios dependen de interfaces de `src/model/ports`, nunca de implementaciones concretas.
+- Los repositorios contienen persistencia e integraciones externas.
+- `src/context/ServicesContext.tsx` es el composition root de la UI.
+- El listener headless construye su propia composición en `src/services/notificationListener.service.ts` porque puede ejecutarse fuera del árbol React.
+- Los tipos y contratos compartidos viven en `src/model/types` y `src/model/ports`.
+- No ampliar patrones antiguos que contradigan estas reglas.
 
-## Regla de oro de dependencias
+## Zonas principales
 
+- `app/`: rutas y pantallas Expo Router.
+- `src/services/`: casos de uso, filtros y servicios de aplicación.
+- `src/repositories/`: implementaciones de persistencia e integraciones.
+- `src/context/ServicesContext.tsx`: servicios disponibles para la UI.
+- `src/ui/components/`: componentes compartidos.
+- `src/ui/theme/theme.ts`: colores, espaciado y tipografía.
+- `src/ui/stores/`: estado global Zustand.
+- `patches/`: parches persistentes de dependencias npm.
+
+## Archivos críticos
+
+- `app/_layout.tsx`: arranque global y activación del listener.
+- `src/services/notificationListener.service.ts`: permisos, headless task y composición del listener.
+- `src/services/notifications.service.ts`: operaciones de notificaciones para la UI.
+- `src/services/settings.service.ts`: operaciones de configuración para la UI.
+- `src/repositories/notifications.repository.ts`: persistencia de registros.
+- `src/repositories/settings.repository.ts`: persistencia de configuración.
+- `patches/react-native-notification-listener+5.0.2.patch`: elimina extracción nativa de iconos/imágenes.
+
+## Reglas de implementación
+
+- Usar `theme` y `StyleSheet.create`; evitar estilos inline nuevos.
+- Para una integración nueva: definir puerto, implementar repositorio, crear servicio, registrar en el composition root y consumir desde UI.
+- Añadir o actualizar tests cuando cambie el comportamiento.
+- Mantener cambios pequeños y no modificar OAuth si la tarea no lo requiere.
+- No editar permanentemente `node_modules`; el parche debe vivir en `patches/`.
+- Después de instalar dependencias ejecutar `npm run postinstall`.
+
+## Validación
+
+```bash
+npm test -- --runInBand
+npm run postinstall
+./android/gradlew -p android app:assembleRelease
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
-UI → useServices() → Services → [Port interface] ← Repositories (implementación concreta)
+
+Logs del listener:
+
+```bash
+adb logcat -d -t 1000 | grep -E "RNAndroidNotificationListener|NotificationListener|FATAL EXCEPTION"
 ```
 
-- La UI **nunca** importa repositorios directamente.
-- Los servicios **nunca** importan implementaciones concretas, solo interfaces de `model/ports/`.
-- Añadir un nuevo flujo = puerto → repositorio → servicio → registrar en `ServicesContext.tsx` → usar en UI.
+El listener requiere activar `Ajustes > Notificaciones > Acceso a notificaciones > skeleton-app`.
 
----
+## Documentación condicional
 
-## Archivos clave que debes conocer
+Consultar documentación solo cuando la tarea lo necesite:
 
-| Archivo | Para qué sirve |
+| Tarea | Documento |
 |---|---|
-| `src/context/ServicesContext.tsx` | Composition root — aquí se conectan repos y servicios |
-| `src/ui/theme/theme.ts` | Tema global — cambiar aquí afecta toda la app |
-| `src/ui/components/DrawerContent.tsx` | Menú lateral con `MENU_GROUPS`, buscador y acordeón |
-| `app/(drawer)/_layout.tsx` | Registrar nuevas pantallas en el drawer |
-| `src/config/env.ts` | Variables de entorno tipadas |
-| `src/model/ports/auth.repository.port.ts` | Ejemplo de cómo definir un puerto |
+| Nueva pantalla, ruta o elemento del drawer | `docs/AGENT_GUIDE.md` |
+| Nuevo componente, integración o cambio de estilos | `docs/AGENT_GUIDE.md` |
+| Cambio en autenticación Google | `docs/GOOGLE_AUTH_SETUP.md` y, si afecta arquitectura, `docs/AGENT_GUIDE.md` |
+| Cambio local en una pantalla, servicio, filtro o test existente | No requiere leer documentación completa |
 
----
-
-## Documentación de referencia
-
-Antes de implementar cualquier cambio, leer:
-
-1. **[`docs/AGENT_GUIDE.md`](docs/AGENT_GUIDE.md)** — cómo extender menú, integraciones, componentes, auth y estilos.
-2. **[`docs/GOOGLE_AUTH_SETUP.md`](docs/GOOGLE_AUTH_SETUP.md)** — configurar Google OAuth en local.
-
----
-
-## Convenciones del proyecto
-
-- **Estilos**: siempre usar `theme` de `@/ui/theme` + `StyleSheet.create`. No inline styles ad-hoc.
-- **Nuevos componentes**: crear en `src/ui/components/` y exportar desde `src/ui/components/index.ts`.
-- **Variables de entorno**: prefijo `EXPO_PUBLIC_` para que estén disponibles en cliente. Definirlas en `.env` (ya en `.gitignore`) y tipadas en `src/config/env.ts`.
-- **Path alias**: `@/` apunta a `src/` (configurado en `tsconfig.json` y `babel.config.js`).
-- **Garantía de Calidad**: siempre que se cambie algo del código, se debe asegurar que las pruebas pasan (`npm test`) y que la cobertura es al menos similar o mejor a la anterior.
-- **Estado global**: Zustand. No pasar props profundas; usar stores en `src/ui/stores/`.
+No asumir que toda tarea necesita crear una pantalla, puerto, servicio o repositorio nuevos. Primero localizar el punto de decisión y reutilizar las abstracciones existentes.

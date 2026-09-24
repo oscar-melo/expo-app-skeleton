@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, Platform, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
 import { AppText } from '@/ui/components';
 import { theme } from '@/ui/theme';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
+import { useServices } from '@/context/ServicesContext';
 import { NotificationRecord } from '@/model/types/notification';
 import { CurrencyFilterHandler } from '@/services/filters/currency-filter.handler';
 
@@ -17,7 +17,9 @@ export default function NotificationsScreen() {
     const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [categoryPickerItem, setCategoryPickerItem] = useState<NotificationRecord | null>(null);
-    const repo = useMemo(() => new NotificationsRepository(), []);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const { notificationsService } = useServices();
 
     useEffect(() => {
         loadNotifications();
@@ -26,7 +28,7 @@ export default function NotificationsScreen() {
     const loadNotifications = async () => {
         try {
             setLoading(true);
-            const data = await repo.getNotifications('filtered');
+            const data = await notificationsService.getNotifications('filtered');
             setNotifications(data);
         } catch (error) {
             console.error('Error loading notifications:', error);
@@ -36,7 +38,7 @@ export default function NotificationsScreen() {
     };
 
     const handleUpdateField = async (id: string, field: keyof NotificationRecord, value: string) => {
-        await repo.updateNotification(id, { [field]: value }, 'filtered');
+        await notificationsService.updateNotification(id, { [field]: value }, 'filtered');
         setNotifications(prev =>
             prev.map(n => n.id === id ? { ...n, [field]: value } : n)
         );
@@ -76,13 +78,43 @@ export default function NotificationsScreen() {
         await handleUpdateField(itemId, 'categoria', category);
     };
 
+    const toggleSelection = (id: string) => {
+        setSelectedIds(previous => {
+            const next = new Set(previous);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleDelete = (ids: string[]) => {
+        if (ids.length === 0) return;
+
+        Alert.alert('Eliminar registros', '¿Estás seguro de que deseas eliminar los registros seleccionados?', [
+            { text: 'No', style: 'cancel' },
+            {
+                text: 'Sí',
+                style: 'destructive',
+                onPress: async () => {
+                    await notificationsService.deleteFilteredNotifications(ids);
+                    setNotifications(previous => previous.filter(notification => !ids.includes(notification.id)));
+                    setSelectedIds(new Set());
+                    setIsSelectionMode(false);
+                },
+            },
+        ]);
+    };
+
     const clearAll = async () => {
         Alert.alert('Limpiar registros', '¿Estás seguro de que deseas borrar todos los registros filtrados?', [
             { text: 'No', style: 'cancel' },
             {
                 text: 'Sí',
                 onPress: async () => {
-                    await repo.clearNotifications('filtered');
+                    await notificationsService.clearFilteredNotifications();
                     setNotifications([]);
                 }
             }
@@ -109,82 +141,125 @@ export default function NotificationsScreen() {
         return 'N/A';
     };
 
-    if (Platform.OS === 'web') {
+    const renderItem = ({ item }: { item: NotificationRecord }) => {
+        const isSelected = selectedIds.has(item.id);
         return (
-            <View style={styles.container}>
-                <Stack.Screen options={{ title: 'Registros Filtrados' }} />
-                <View style={styles.centered}>
-                    <AppText variant="subtitle">No disponible en Web</AppText>
-                    <AppText variant="caption">Las notificaciones solo se capturan en la versión móvil (Android).</AppText>
+            <TouchableOpacity
+                onLongPress={() => { setIsSelectionMode(true); toggleSelection(item.id); }}
+                onPress={() => isSelectionMode ? toggleSelection(item.id) : null}
+                style={[styles.recordCard, isSelected && { borderWidth: 2, borderColor: theme.colors.primary }]}
+            >
+                <View style={styles.table}>
+                    <View style={styles.row}>
+                        <View style={styles.col}>
+                            <AppText variant="caption" style={styles.label}>Fuente</AppText>
+                            <AppText style={styles.value}>{item.fuente}</AppText>
+                        </View>
+                        {!isSelectionMode && (
+                            <TouchableOpacity onPress={() => handleDelete([item.id])}>
+                                <AppText style={{ fontSize: 20 }}>🗑️</AppText>
+                            </TouchableOpacity>
+                        )}
+                        {isSelectionMode && (
+                            <View style={[styles.checkbox, isSelected && styles.checkboxSelected]} />
+                        )}
+                    </View>
+
+
+
+                    <View style={styles.row}>
+                        <View style={styles.col}>
+                            <AppText variant="caption" style={styles.label}>Valor</AppText>
+                            <AppText style={styles.amount}>
+                                {getMontoDisplay(item)}
+                            </AppText>
+                        </View>
+                    </View>
+
+
+
+
+
+
+
+
+
+                    <View style={styles.divider} />
+                    <View style={styles.row}>
+                        <TouchableOpacity style={styles.col} onPress={() => showTypePicker(item)}>
+                            <AppText variant="caption" style={styles.label}>Clasificación</AppText>
+                            <View style={styles.selector}>
+                                <AppText style={[styles.selectorText, !item.tipoTransaccion && styles.placeholder]}>
+                                    {item.tipoTransaccion ? item.tipoTransaccion.toUpperCase() : 'Seleccione'}
+                                </AppText>
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.col} onPress={() => showCategoryPicker(item)}>
+                            <AppText variant="caption" style={styles.label}>Categoría</AppText>
+                            <View style={styles.selector}>
+                                <AppText style={[styles.selectorText, !item.categoria && styles.placeholder]}>
+                                    {item.categoria || 'Seleccione'}
+                                </AppText>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                    <AppText style={styles.detailText} numberOfLines={2}>
+                        {item.origen}: {item.contenido}
+                    </AppText>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
-    }
+    };
 
-    const renderItem = ({ item }: { item: NotificationRecord }) => (
-        <View style={styles.recordCard}>
-            <View style={styles.table}>
-                {/* Fila 1: Fuente y Fecha */}
-                <View style={styles.row}>
-                    <View style={styles.col}>
-                        <AppText variant="caption" style={styles.label}>Fuente</AppText>
-                        <AppText style={styles.value}>{item.fuente}</AppText>
-                    </View>
-                    <View style={[styles.col, { alignItems: 'flex-end' }]}>
-                        <AppText variant="caption" style={styles.label}>Fecha y Hora</AppText>
-                        <AppText style={styles.smallValue}>{item.fecha}, {item.hora}</AppText>
-                    </View>
-                </View>
 
-                {/* Fila 2: Valor (Dinámico) */}
-                <View style={styles.row}>
-                    <View style={styles.col}>
-                        <AppText variant="caption" style={styles.label}>Valor</AppText>
-                        <AppText style={styles.amount}>
-                            {getMontoDisplay(item)}
-                        </AppText>
-                    </View>
-                </View>
 
-                <View style={styles.divider} />
 
-                {/* Fila 3: Clasificación y Categoría */}
-                <View style={styles.row}>
-                    <TouchableOpacity style={styles.col} onPress={() => showTypePicker(item)}>
-                        <AppText variant="caption" style={styles.label}>Clasificación</AppText>
-                        <View style={styles.selector}>
-                            <AppText style={[styles.selectorText, !item.tipoTransaccion && styles.placeholder]}>
-                                {item.tipoTransaccion ? item.tipoTransaccion.toUpperCase() : 'Seleccione'}
-                            </AppText>
-                        </View>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.col} onPress={() => showCategoryPicker(item)}>
-                        <AppText variant="caption" style={styles.label}>Categoría</AppText>
-                        <View style={styles.selector}>
-                            <AppText style={[styles.selectorText, !item.categoria && styles.placeholder]}>
-                                {item.categoria || 'Seleccione'}
-                            </AppText>
-                        </View>
-                    </TouchableOpacity>
-                </View>
 
-                {/* Descripción completa */}
-                <AppText style={styles.detailText} numberOfLines={2}>
-                    {item.origen}: {item.contenido}
-                </AppText>
-            </View>
-        </View>
-    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     return (
         <View style={styles.container}>
             <Stack.Screen options={{
-                title: 'Registros Filtrados',
+
+                title: isSelectionMode ? `${selectedIds.size} seleccionados` : 'Registros Filtrados',
                 headerRight: () => (
-                    <TouchableOpacity onPress={clearAll} style={{ marginRight: 15 }}>
-                        <AppText style={{ color: theme.colors.primary, fontWeight: '600' }}>Limpiar</AppText>
-                    </TouchableOpacity>
+
+
+
+                    isSelectionMode ? (
+                        <TouchableOpacity onPress={() => handleDelete(Array.from(selectedIds))} style={{ marginRight: 15 }}>
+                            <AppText style={{ color: 'red', fontWeight: '600' }}>Eliminar ({selectedIds.size})</AppText>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity onPress={clearAll} style={{ marginRight: 15 }}>
+                            <AppText style={{ color: theme.colors.primary, fontWeight: '600' }}>Limpiar</AppText>
+                        </TouchableOpacity>
+                    )
                 )
             }} />
 
@@ -263,7 +338,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 16,
         marginBottom: 16,
-        ...theme.shadows?.small,
+        ...theme.shadows?.sm,
         elevation: 2,
     },
     table: {
@@ -360,5 +435,16 @@ const styles = StyleSheet.create({
     cancelButtonText: {
         color: theme.colors.primary,
         fontWeight: '700',
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#cbd5e1',
+    },
+    checkboxSelected: {
+        backgroundColor: theme.colors.primary,
+        borderColor: theme.colors.primary,
     },
 });

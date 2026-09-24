@@ -1,15 +1,12 @@
 import { AbstractNotificationHandler } from './notification-filter';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
-import { SettingsRepository } from '@/repositories/settings.repository';
+import type { INotificationsRepository, ISettingsRepository } from '@/model/ports';
 
 export class SaveAllHandler extends AbstractNotificationHandler {
-    private repo: NotificationsRepository;
-    private settingsRepo: SettingsRepository;
-
-    constructor() {
+    constructor(
+        private readonly notificationsRepository: INotificationsRepository,
+        private readonly settingsRepository: ISettingsRepository,
+    ) {
         super();
-        this.repo = new NotificationsRepository();
-        this.settingsRepo = SettingsRepository.getInstance();
     }
 
     public async handle(notification: any): Promise<void> {
@@ -38,11 +35,11 @@ export class SaveAllHandler extends AbstractNotificationHandler {
         };
 
         // Save to 'all' collection
-        await this.repo.saveNotification(record, 'all');
+        await this.notificationsRepository.saveNotification(record, 'all');
 
         // Add app to known apps
         if (notification.app) {
-            await this.settingsRepo.addKnownApp(notification.app);
+            await this.settingsRepository.addKnownApp(notification.app);
         }
 
         return super.handle(notification, record);

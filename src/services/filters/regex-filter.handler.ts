@@ -1,13 +1,10 @@
 import { AbstractNotificationHandler } from './notification-filter';
-import { SettingsRepository } from '@/repositories/settings.repository';
+import type { ISettingsRepository } from '@/model/ports';
 import { NotificationRecord } from '@/model/types/notification';
 
 export class RegexFilterHandler extends AbstractNotificationHandler {
-    private settingsRepo: SettingsRepository;
-
-    constructor() {
+    constructor(private readonly settingsRepository: ISettingsRepository) {
         super();
-        this.settingsRepo = SettingsRepository.getInstance();
     }
 
     public async handle(notification: any, record?: Partial<NotificationRecord>): Promise<void> {
@@ -15,7 +12,7 @@ export class RegexFilterHandler extends AbstractNotificationHandler {
             return super.handle(notification, record);
         }
 
-        const settings = await this.settingsRepo.getSettings();
+        const settings = await this.settingsRepository.getSettings();
         const regexStr = settings.notificationRegex;
 
         // Si no hay regex configurado, el usuario quiere filtrar pero no ha definido cómo.

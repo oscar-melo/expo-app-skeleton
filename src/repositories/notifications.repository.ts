@@ -71,4 +71,33 @@ export class NotificationsRepository implements INotificationsRepository {
             console.error(`[NotificationsRepo] Error updating notification ${id}:`, error);
         }
     }
+
+    async deleteNotification(id: string, collection: string = 'filtered'): Promise<void> {
+        if (Platform.OS === 'web') return;
+        try {
+            const records = await this.getNotifications(collection);
+            const filteredRecords = records.filter(r => r.id !== id);
+            await FileSystem.writeAsStringAsync(
+                this.getFileName(collection),
+                JSON.stringify(filteredRecords, null, 2)
+            );
+        } catch (error) {
+            console.error(`[NotificationsRepo] Error deleting notification ${id} from ${collection}:`, error);
+        }
+    }
+
+    async deleteNotifications(ids: string[], collection: string = 'filtered'): Promise<void> {
+        if (Platform.OS === 'web') return;
+        try {
+            const idSet = new Set(ids);
+            const records = await this.getNotifications(collection);
+            const filteredRecords = records.filter(r => !idSet.has(r.id));
+            await FileSystem.writeAsStringAsync(
+                this.getFileName(collection),
+                JSON.stringify(filteredRecords, null, 2)
+            );
+        } catch (error) {
+            console.error(`[NotificationsRepo] Error deleting multiple notifications from ${collection}:`, error);
+        }
+    }
 }

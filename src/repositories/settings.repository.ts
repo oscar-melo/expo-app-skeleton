@@ -1,15 +1,11 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
+import type { ISettingsRepository } from '@/model/ports';
+import type { NotificationSettings } from '@/model/types/settings';
 
 const SETTINGS_FILE = `${FileSystem.documentDirectory}notification_settings.json`;
 
-export interface NotificationSettings {
-    notificationRegex: string;
-    selectedApps: string[];
-    knownApps: string[];
-}
-
-export class SettingsRepository {
+export class SettingsRepository implements ISettingsRepository {
     private static instance: SettingsRepository;
 
     private constructor() { }

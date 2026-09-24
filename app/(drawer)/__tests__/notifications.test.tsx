@@ -1,11 +1,19 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 import NotificationsScreen from '../notifications';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
+
+const mockGetNotifications = jest.fn();
 
 // Mock dependencies
-jest.mock('@/repositories/notifications.repository');
+jest.mock('@/context/ServicesContext', () => ({
+    useServices: () => ({
+        notificationsService: {
+            getNotifications: mockGetNotifications,
+            updateNotification: jest.fn(),
+            clearNotifications: jest.fn(),
+        },
+    }),
+}));
 jest.mock('expo-router', () => ({
     Stack: {
         Screen: jest.fn(() => null),
@@ -38,9 +46,7 @@ describe('NotificationsScreen UI Rendering', () => {
     });
 
     it('should render the stored amount correctly', async () => {
-        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
-            getNotifications: jest.fn().mockResolvedValue([mockRecordWithMonto]),
-        }));
+        mockGetNotifications.mockResolvedValue([mockRecordWithMonto]);
 
         const { findByText } = render(<NotificationsScreen />);
 
@@ -49,9 +55,7 @@ describe('NotificationsScreen UI Rendering', () => {
     });
 
     it('should extract and render the amount dynamically if missing in the record', async () => {
-        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
-            getNotifications: jest.fn().mockResolvedValue([mockRecordWithoutMonto]),
-        }));
+        mockGetNotifications.mockResolvedValue([mockRecordWithoutMonto]);
 
         const { findByText } = render(<NotificationsScreen />);
 
@@ -61,16 +65,14 @@ describe('NotificationsScreen UI Rendering', () => {
     });
 
     it('should render N/A if amount is missing and cannot be extracted', async () => {
-        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
-            getNotifications: jest.fn().mockResolvedValue([{
-                id: '3',
-                fuente: 'App',
-                origen: 'Other',
-                contenido: 'Mensaje sin dinero',
-                fecha: '8/3/2026',
-                hora: '12:00 p.m.'
-            }]),
-        }));
+        mockGetNotifications.mockResolvedValue([{
+            id: '3',
+            fuente: 'App',
+            origen: 'Other',
+            contenido: 'Mensaje sin dinero',
+            fecha: '8/3/2026',
+            hora: '12:00 p.m.'
+        }]);
 
         const { findByText } = render(<NotificationsScreen />);
 
@@ -79,12 +81,10 @@ describe('NotificationsScreen UI Rendering', () => {
     });
 
     it('should show income categories in category popup', async () => {
-        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
-            getNotifications: jest.fn().mockResolvedValue([{
-                ...mockRecordWithMonto,
-                tipoTransaccion: 'ingreso',
-            }]),
-        }));
+        mockGetNotifications.mockResolvedValue([{
+            ...mockRecordWithMonto,
+            tipoTransaccion: 'ingreso',
+        }]);
 
         const { findByText } = render(<NotificationsScreen />);
         await findByText('$ 9,000.00 COP');
@@ -99,12 +99,10 @@ describe('NotificationsScreen UI Rendering', () => {
     });
 
     it('should show expense categories in category popup', async () => {
-        (NotificationsRepository as jest.Mock).mockImplementation(() => ({
-            getNotifications: jest.fn().mockResolvedValue([{
-                ...mockRecordWithMonto,
-                tipoTransaccion: 'egreso',
-            }]),
-        }));
+        mockGetNotifications.mockResolvedValue([{
+            ...mockRecordWithMonto,
+            tipoTransaccion: 'egreso',
+        }]);
 
         const { findByText } = render(<NotificationsScreen />);
         await findByText('$ 9,000.00 COP');

@@ -4,16 +4,21 @@ import { SaveAllHandler } from './filters/save-all.handler';
 import { AppFilterHandler } from './filters/app-filter.handler';
 import { RegexFilterHandler } from './filters/regex-filter.handler';
 import { CurrencyFilterHandler } from './filters/currency-filter.handler';
+import { NotificationsRepository } from '@/repositories/notifications.repository';
+import { SettingsRepository } from '@/repositories/settings.repository';
 
 // Manejo de importación segura
 const RNNotificationListener = (RNNotificationListenerModule as any).default || RNNotificationListenerModule;
 const HeadlessJsName = RNNotificationListenerModule.RNAndroidNotificationListenerHeadlessJsName || 'RNAndroidNotificationListenerHeadlessJs';
 
+const notificationsRepository = new NotificationsRepository();
+const settingsRepository = SettingsRepository.getInstance();
+
 // Setup the filter chain
-const saveAllHandler = new SaveAllHandler();
-const appFilterHandler = new AppFilterHandler();
-const regexFilterHandler = new RegexFilterHandler();
-const currencyFilterHandler = new CurrencyFilterHandler();
+const saveAllHandler = new SaveAllHandler(notificationsRepository, settingsRepository);
+const appFilterHandler = new AppFilterHandler(settingsRepository);
+const regexFilterHandler = new RegexFilterHandler(settingsRepository);
+const currencyFilterHandler = new CurrencyFilterHandler(notificationsRepository);
 
 saveAllHandler
     .setNext(appFilterHandler)

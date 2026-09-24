@@ -3,12 +3,13 @@ import { View, StyleSheet, FlatList, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { AppText } from '@/ui/components';
 import { theme } from '@/ui/theme';
-import { NotificationsRepository } from '@/repositories/notifications.repository';
 import { NotificationRecord } from '@/model/ports';
+import { useServices } from '@/context/ServicesContext';
 
 export default function AllEventsScreen() {
     const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const { notificationsService } = useServices();
 
     useEffect(() => {
         loadNotifications();
@@ -16,8 +17,7 @@ export default function AllEventsScreen() {
 
     const loadNotifications = async () => {
         setLoading(true);
-        const repo = new NotificationsRepository();
-        const data = await repo.getNotifications('all');
+        const data = await notificationsService.getNotifications('all');
         setNotifications(data);
         setLoading(false);
     };
